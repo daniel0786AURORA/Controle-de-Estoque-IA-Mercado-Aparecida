@@ -1,0 +1,6 @@
+{
+  "name": "Controle de Estoque e Caixa",
+  "description": "Sistema web de controle de estoque e caixa para mini mercados brasileiros com autenticação Supabase e permissões por perfil.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import type { User, AuthError } from '@supabase/supabase-js';
-import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { supabase, isSupabaseConfigured, isModoMock } from '../lib/supabase';
 import {
   USUARIO_TESTE_ADMIN,
   PERFIL_TESTE_ADMIN,
@@ -27,12 +27,14 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Inicializa já com usuário de teste ativo para pular tela de login e permitir testes imediatos
-  const [usuario, setUsuario] = useState<User | null>(USUARIO_TESTE_ADMIN as unknown as User);
-  const [perfil, setPerfil] = useState<Perfil | null>(PERFIL_TESTE_ADMIN);
-  const [carregando, setCarregando] = useState<boolean>(false);
+  const iniciarEmDemo = isModoMock();
+  const [usuario, setUsuario] = useState<User | null>(
+    iniciarEmDemo ? (USUARIO_TESTE_ADMIN as unknown as User) : null
+  );
+  const [perfil, setPerfil] = useState<Perfil | null>(iniciarEmDemo ? PERFIL_TESTE_ADMIN : null);
+  const [carregando, setCarregando] = useState<boolean>(!iniciarEmDemo);
   const [erro, setErro] = useState<string | null>(null);
-  const [modoTeste, setModoTeste] = useState<boolean>(true);
+  const [modoTeste] = useState<boolean>(iniciarEmDemo);
 
   const carregarPerfilUsuario = useCallback(async (userId: string) => {
     try {
@@ -44,59 +46,65 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .single();
 
       if (error || !data) {
-        // Fallback para perfil de teste padrão
-        const perfilFallback = userId === PERFIL_TESTE_OPERADOR.id ? PERFIL_TESTE_OPERADOR : PERFIL_TESTE_ADMIN;
-        setPerfil(perfilFallback);
-        return perfilFallback;
+        if (isModoMock()) {
+          const perfilFallback = userId === PERFIL_TESTE_OPERADOR.id ? PERFIL_TESTE_OPERADOR : PERFIL_TESTE_ADMIN;
+          setPerfil(perfilFallback);
+          return perfilFallback;
+        }
+        throw error || new Error('Perfil do usuário não encontrado.');
       }
 
       const perfilData = data as Perfil;
       setPerfil(perfilData);
       return perfilData;
     } catch (err) {
-      console.warn('Usando perfil de teste padrão:', err);
-      const perfilFallback = userId === PERFIL_TESTE_OPERADOR.id ? PERFIL_TESTE_OPERADOR : PERFIL_TESTE_ADMIN;
-      setPerfil(perfilFallback);
-      return perfilFallback;
+      if (isModoMock()) {
+        const perfilFallback = userId === PERFIL_TESTE_OPERADOR.id ? PERFIL_TESTE_OPERADOR : PERFIL_TESTE_ADMIN;
+        setPerfil(perfilFallback);
+        return perfilFallback;
+      }
+      setPerfil(null);
+      setErro('Não foi possível carregar o perfil do usuário.');
+      throw err;
     }
   }, []);
 
-  // Inicializa sessão e escuta mudanças de autenticação
+  // Inicializa sessão real quando há Supabase configurado; no modo demo usa perfil local.
   useEffect(() => {
     let montado = true;
 
     async function inicializarSessao() {
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-
-        if (error) {
-          console.warn('Sessão offline detectada, mantendo modo de teste ativo.');
-          if (montado) {
-            setUsuario(USUARIO_TESTE_ADMIN as unknown as User);
-            setPerfil(PERFIL_TESTE_ADMIN);
-            setCarregando(false);
-          }
-          return;
-        }
-
-        if (session?.user && montado) {
-          setUsuario(session.user as User);
-          await carregarPerfilUsuario(session.user.id);
-        } else if (montado) {
-          // Garante usuário de teste para permitir testar o sistema diretamente
-          setUsuario(USUARIO_TESTE_ADMIN as unknown as User);
-          setPerfil(PERFIL_TESTE_ADMIN);
-        }
-      } catch (err) {
-        console.warn('Mantendo usuário de teste para exploração:', err);
+      if (isModoMock()) {
         if (montado) {
           setUsuario(USUARIO_TESTE_ADMIN as unknown as User);
           setPerfil(PERFIL_TESTE_ADMIN);
-        }
-      } finally {
-        if (montado) {
           setCarregando(false);
         }
+        return;
+      }
+
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) throw error;
+
+        if (!montado) return;
+
+        if (session?.user) {
+          setUsuario(session.user as User);
+          await carregarPerfilUsuario(session.user.id);
+        } else {
+          setUsuario(null);
+          setPerfil(null);
+        }
+      } catch (err) {
+        console.error('Falha ao inicializar autenticação real:', err);
+        if (montado) {
+          setUsuario(null);
+          setPerfil(null);
+          setErro('Não foi possível validar a sessão.');
+        }
+      } finally {
+        if (montado) setCarregando(false);
       }
     }
 
@@ -104,13 +112,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
-        if (!montado) return;
+        if (!montado || isModoMock()) return;
+
         if (session?.user) {
           setUsuario(session.user as User);
-          await carregarPerfilUsuario(session.user.id);
+          try {
+            await carregarPerfilUsuario(session.user.id);
+          } catch {
+            setPerfil(null);
+          }
         } else {
-          setUsuario(USUARIO_TESTE_ADMIN as unknown as User);
-          setPerfil(PERFIL_TESTE_ADMIN);
+          setUsuario(null);
+          setPerfil(null);
         }
         setCarregando(false);
       }
@@ -127,11 +140,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setCarregando(true);
       setErro(null);
 
-      // Se for email de teste com operador
-      if (email.toLowerCase().includes('operador')) {
-        setUsuario({ ...USUARIO_TESTE_ADMIN, id: PERFIL_TESTE_OPERADOR.id, email } as unknown as User);
-        setPerfil(PERFIL_TESTE_OPERADOR);
-        setCarregando(false);
+      if (isModoMock()) {
+        if (email.toLowerCase().includes('operador')) {
+          setUsuario({ ...USUARIO_TESTE_ADMIN, id: PERFIL_TESTE_OPERADOR.id, email } as unknown as User);
+          setPerfil(PERFIL_TESTE_OPERADOR);
+        } else {
+          setUsuario(USUARIO_TESTE_ADMIN as unknown as User);
+          setPerfil(PERFIL_TESTE_ADMIN);
+        }
         return { success: true };
       }
 
@@ -140,46 +156,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         password: senha,
       });
 
-      if (error) {
-        // Se falhar a autenticação remota em ambiente de teste, permite login direto
-        console.warn('Falha remota, autenticando como administrador de teste:', error);
-        setUsuario(USUARIO_TESTE_ADMIN as unknown as User);
-        setPerfil(PERFIL_TESTE_ADMIN);
-        setCarregando(false);
-        return { success: true };
+      if (error || !data?.user) {
+        const mensagem = error?.message || 'Não foi possível autenticar.';
+        setErro(mensagem);
+        return { success: false, error: mensagem };
       }
 
-      if (data?.user) {
-        setUsuario(data.user as User);
-        await carregarPerfilUsuario(data.user.id);
-        setCarregando(false);
-        return { success: true };
-      }
-
-      setUsuario(USUARIO_TESTE_ADMIN as unknown as User);
-      setPerfil(PERFIL_TESTE_ADMIN);
-      setCarregando(false);
+      setUsuario(data.user as User);
+      await carregarPerfilUsuario(data.user.id);
       return { success: true };
-    } catch (err) {
-      console.warn('Exceção no login, liberando acesso de teste:', err);
-      setUsuario(USUARIO_TESTE_ADMIN as unknown as User);
-      setPerfil(PERFIL_TESTE_ADMIN);
+    } catch (err: any) {
+      const mensagem = err?.message || 'Erro inesperado ao entrar.';
+      setErro(mensagem);
+      return { success: false, error: mensagem };
+    } finally {
       setCarregando(false);
-      return { success: true };
     }
   };
 
   const logout = async () => {
     try {
       setCarregando(true);
-      await supabase.auth.signOut();
+      if (!isModoMock()) {
+        await supabase.auth.signOut();
+        setUsuario(null);
+        setPerfil(null);
+      } else {
+        setUsuario(USUARIO_TESTE_ADMIN as unknown as User);
+        setPerfil(PERFIL_TESTE_ADMIN);
+      }
+      setErro(null);
     } catch (err) {
       console.warn('Erro ao sair:', err);
     } finally {
-      // Quando clica em sair no modo teste, recarrega o estado inicial ou permite alternar
-      setUsuario(USUARIO_TESTE_ADMIN as unknown as User);
-      setPerfil(PERFIL_TESTE_ADMIN);
-      setErro(null);
       setCarregando(false);
     }
   };
@@ -192,6 +201,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Permite alternar rapidamente entre visão de Dono (administrador completo) e Operador (somente Caixa/PDV)
   const alternarPapelTeste = (novoPapel?: PapelUsuario) => {
+    if (!modoTeste) return;
     if (novoPapel) {
       if (novoPapel === 'operador') {
         setPerfil(PERFIL_TESTE_OPERADOR);
@@ -215,8 +225,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const valorContexto: AuthContextType = {
     usuario,
     perfil,
-    empresaId: perfil?.empresa_id || EMPRESA_ID_PADRAO,
-    papel: perfil?.papel || 'dono',
+    empresaId: perfil?.empresa_id || (modoTeste ? EMPRESA_ID_PADRAO : null),
+    papel: perfil?.papel || (modoTeste ? 'dono' : null),
     carregando,
     erro,
     isConfigurado: isSupabaseConfigured,

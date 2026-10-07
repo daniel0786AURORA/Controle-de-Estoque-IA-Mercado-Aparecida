@@ -427,8 +427,8 @@ export const PainelPage: React.FC<PainelPageProps> = ({ aoNavegar }) => {
   // Se o usuário não for dono, bloqueia a visualização
   if (!ehDono) {
     return (
-      <div className="w-full max-w-7xl mx-auto p-4 sm:p-6 md:p-8 flex flex-col items-center justify-center min-h-[60vh]">
-        <div className="bg-white p-8 rounded-2xl border border-[#14211C]/15 shadow-sm text-center max-w-md">
+      <div className="w-full max-w-[1180px] mx-auto p-3 sm:p-4 md:p-5 flex flex-col items-center justify-center min-h-[60vh]">
+        <div className="bg-white p-6 rounded-2xl border border-[#14211C]/15 shadow-sm text-center max-w-md">
           <div className="w-14 h-14 bg-[#C4361A]/10 text-[#C4361A] rounded-2xl flex items-center justify-center mx-auto mb-4">
             <ShieldAlert className="w-8 h-8" />
           </div>
@@ -442,7 +442,7 @@ export const PainelPage: React.FC<PainelPageProps> = ({ aoNavegar }) => {
   }
 
   return (
-    <div className="w-full max-w-7xl mx-auto p-4 sm:p-6 md:p-8 space-y-6">
+    <div className="w-full max-w-[1180px] mx-auto p-3 sm:p-4 md:p-5 space-y-4 sm:space-y-5">
 
       {/* ------------------------------------------------------------- */}
       {/* LINHA DE HOJE (no topo, discreta e executiva) */}
@@ -462,7 +462,7 @@ export const PainelPage: React.FC<PainelPageProps> = ({ aoNavegar }) => {
           </span>
         </div>
 
-        <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-xs sm:text-sm">
+        <div className="flex flex-wrap items-center gap-4 sm:gap-4 text-xs sm:text-sm">
           <div className="flex items-center gap-1.5">
             <span className="text-[#14211C]/60 font-medium">Vendas de hoje:</span>
             <strong className="text-[#14211C] font-bold text-sm sm:text-base">
@@ -521,7 +521,7 @@ export const PainelPage: React.FC<PainelPageProps> = ({ aoNavegar }) => {
             </div>
           </div>
           
-          <div className="text-2xl sm:text-3xl font-bold text-[#14211C] my-1">
+          <div className="text-xl sm:text-2xl font-bold text-[#14211C] my-1">
             {carregando ? (
               <div className="h-9 bg-[#14211C]/10 rounded w-32 animate-pulse" />
             ) : (
@@ -555,7 +555,7 @@ export const PainelPage: React.FC<PainelPageProps> = ({ aoNavegar }) => {
             </div>
           </div>
           
-          <div className="text-2xl sm:text-3xl font-bold text-[#C4361A] my-1">
+          <div className="text-xl sm:text-2xl font-bold text-[#C4361A] my-1">
             {carregando ? (
               <div className="h-9 bg-[#C4361A]/10 rounded w-32 animate-pulse" />
             ) : (
@@ -589,7 +589,7 @@ export const PainelPage: React.FC<PainelPageProps> = ({ aoNavegar }) => {
             </div>
           </div>
           
-          <div className="text-2xl sm:text-3xl font-bold text-[#935A12] my-1">
+          <div className="text-xl sm:text-2xl font-bold text-[#935A12] my-1">
             {carregando ? (
               <div className="h-9 bg-[#935A12]/10 rounded w-32 animate-pulse" />
             ) : (
@@ -623,7 +623,7 @@ export const PainelPage: React.FC<PainelPageProps> = ({ aoNavegar }) => {
             </div>
           </div>
           
-          <div className="text-2xl sm:text-3xl font-bold text-[#14211C] my-1">
+          <div className="text-xl sm:text-2xl font-bold text-[#14211C] my-1">
             {carregando ? (
               <div className="h-9 bg-[#0E7A4F]/10 rounded w-20 animate-pulse" />
             ) : (

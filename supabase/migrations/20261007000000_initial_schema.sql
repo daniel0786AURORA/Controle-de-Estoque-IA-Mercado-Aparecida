@@ -265,9 +265,9 @@ LANGUAGE sql
 STABLE
 SECURITY DEFINER
 SET search_path = ''
-AS $
+AS $func$
     SELECT empresa_id FROM public.perfil WHERE id = auth.uid() LIMIT 1;
-$;
+$func$;
 
 -- Helper para obter o papel do usuário autenticado
 CREATE OR REPLACE FUNCTION public.get_meu_papel()
@@ -276,9 +276,9 @@ LANGUAGE sql
 STABLE
 SECURITY DEFINER
 SET search_path = ''
-AS $
+AS $func$
     SELECT papel FROM public.perfil WHERE id = auth.uid() LIMIT 1;
-$;
+$func$;
 
 -- RPC Transacional de Fechamento de Venda
 CREATE OR REPLACE FUNCTION public.fechar_venda(

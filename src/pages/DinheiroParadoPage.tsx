@@ -265,7 +265,7 @@ export const DinheiroParadoPage: React.FC = () => {
 
         const ultimaVenda = ultimaVendaMap.get(prod.id) || null;
 
-  const [promocaoDivulgar, setPromocaoDivulgar] = useState<{ tipo: 'unica' | 'todas', lista: PromocaoInfo[] } | null>(null);
+
         let diasSemVenda = Infinity;
         if (ultimaVenda) {
           diasSemVenda = differenceInDays(hoje, startOfDay(parseISO(ultimaVenda)));

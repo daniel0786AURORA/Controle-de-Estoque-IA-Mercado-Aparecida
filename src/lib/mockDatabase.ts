@@ -755,51 +755,66 @@ class MockDatabaseService {
   }
 
   public fecharVendaRPC(params: {
-    p_itens: Array<{
-      produto_id: string;
-      quantidade: number;
-      preco_unit: number;
-      custo_unit: number;
-      desconto_unit?: number;
-    }>;
+    p_itens: Array<{ produto_id: string; quantidade: number; preco_unit: number }>;
     p_forma: string;
     operador_id?: string;
+    p_desconto_motivo?: string | null;
   }): string {
     const vendaId = `venda_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
     let totalVenda = 0;
+    let custoTotal = 0;
     let descontoTotal = 0;
 
     params.p_itens.forEach((item) => {
-      const precoFinal = item.preco_unit;
-      const subtotal = precoFinal * item.quantidade;
-      totalVenda += subtotal;
-      descontoTotal += (item.desconto_unit || 0) * item.quantidade;
+      const produto = this.produtos.find((p) => p.id === item.produto_id);
+      if (!produto) throw new Error('Produto não encontrado no modo demo.');
 
-      // Abate do estoque
+      const saldoAtual = this.saldos[item.produto_id] ?? 0;
+      if (saldoAtual < item.quantidade) {
+        throw new Error(`Estoque insuficiente para ${produto.nome}.`);
+      }
+
+      const precoAtual = this.getPrecoAtualView().find((p) => p.produto_id === item.produto_id);
+      const precoBase = Number(precoAtual?.preco_venda ?? produto.preco);
+      const precoFinal = Number(item.preco_unit);
+      const subtotal = precoFinal * item.quantidade;
+
+      totalVenda += subtotal;
+      custoTotal += Number(produto.custo || 0) * item.quantidade;
+      descontoTotal += Math.max(0, precoBase - precoFinal) * item.quantidade;
+
       this.atualizarEstoque(item.produto_id, -item.quantidade, true);
 
-      // Incrementa giro
-      if (this.giro30d[item.produto_id]) {
-        this.giro30d[item.produto_id].vendido_30d += item.quantidade;
+      if (!this.giro30d[item.produto_id]) {
+        this.giro30d[item.produto_id] = { vendido_30d: 0, media_dia: 0 };
       }
+      this.giro30d[item.produto_id].vendido_30d += item.quantidade;
+      this.giro30d[item.produto_id].media_dia =
+        Number((this.giro30d[item.produto_id].vendido_30d / 30).toFixed(2));
 
       this.itensVenda.push({
         id: `iv_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
         venda_id: vendaId,
         produto_id: item.produto_id,
         quantidade: item.quantidade,
-        preco_unit: item.preco_unit,
-        custo_unit: item.custo_unit,
-        desconto_unit: item.desconto_unit || 0,
+        preco_unit: precoFinal,
+        custo_unit: produto.custo,
+        desconto_unit: Math.max(0, Number(produto.preco) - precoFinal),
+        produto: { nome: produto.nome },
+        venda: { criado_em: new Date().toISOString(), empresa_id: EMPRESA_ID_PADRAO },
       });
     });
 
+    const taxaPct = Number((this.configTaxa as any)[params.p_forma] || 0);
     const novaVenda = {
       id: vendaId,
       empresa_id: EMPRESA_ID_PADRAO,
       operador_id: params.operador_id || USUARIO_TESTE_ADMIN.id,
       total: Number(totalVenda.toFixed(2)),
+      custo_total: Number(custoTotal.toFixed(2)),
       desconto: Number(descontoTotal.toFixed(2)),
+      desconto_motivo: params.p_desconto_motivo || null,
+      taxa: Number((totalVenda * taxaPct).toFixed(2)),
       forma_pagamento: params.p_forma,
       criado_em: new Date().toISOString(),
     };
@@ -807,6 +822,49 @@ class MockDatabaseService {
     this.vendas.unshift(novaVenda);
     this.salvarNoLocalStorage();
     return vendaId;
+  }
+
+  public registrarEntradaProdutoRPC(params: any): string {
+    let produtoId = params.p_produto_id as string | null;
+
+    if (produtoId) {
+      this.atualizarProduto(produtoId, {
+        ean: params.p_ean || null,
+        nome: params.p_nome,
+        categoria_id: params.p_categoria_id || null,
+        unidade: params.p_unidade,
+        custo: Number(params.p_custo || 0),
+        preco: Number(params.p_preco || 0),
+        perecivel: Boolean(params.p_perecivel),
+        estoque_minimo: Number(params.p_meta_cobertura_dias || 21),
+        ativo: true,
+      });
+    } else {
+      const novo = this.adicionarProduto({
+        ean: params.p_ean || null,
+        nome: params.p_nome,
+        categoria_id: params.p_categoria_id || null,
+        unidade: params.p_unidade,
+        custo: Number(params.p_custo || 0),
+        preco: Number(params.p_preco || 0),
+        perecivel: Boolean(params.p_perecivel),
+        estoque_minimo: Number(params.p_meta_cobertura_dias || 21),
+        ativo: true,
+      });
+      produtoId = novo.id;
+      this.giro30d[produtoId] = { vendido_30d: 0, media_dia: 0 };
+    }
+
+    if (params.p_validade) {
+      this.adicionarLote({
+        produto_id: produtoId,
+        validade: params.p_validade,
+        custo: Number(params.p_custo || 0),
+      });
+    }
+
+    this.atualizarEstoque(produtoId!, Number(params.p_quantidade || 0), true);
+    return produtoId!;
   }
 
   public atualizarVenda(id: string, updates: any) {

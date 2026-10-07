@@ -49,7 +49,7 @@ const ABAS_OPERADOR: ItemAba[] = [
 ];
 
 export const Layout: React.FC<LayoutProps> = ({ rotaAtiva, aoMudarRota, children }) => {
-  const { usuario, perfil, papel, logout } = useAuth();
+  const { usuario, perfil, papel, logout, alternarPapelTeste } = useAuth();
 
   const abasDisponiveis = papel === 'operador' ? ABAS_OPERADOR : TODAS_ABAS_DONO;
 
@@ -80,7 +80,26 @@ export const Layout: React.FC<LayoutProps> = ({ rotaAtiva, aoMudarRota, children
 
             {/* Usuário, Papel e Botão Sair */}
             <div className="flex items-center gap-2 sm:gap-3">
-              
+              {/* Botão de Alternância de Papel para Testes */}
+              <button
+                id="toggle-papel-teste-btn"
+                onClick={() => alternarPapelTeste()}
+                title="Alternar entre perfil de Dono (todas as abas) e Operador (apenas Caixa)"
+                className="min-h-[40px] px-2.5 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 text-xs font-medium border border-emerald-500/30 flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                {papel === 'dono' ? (
+                  <>
+                    <UserCheck className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Simular Operador</span>
+                  </>
+                ) : (
+                  <>
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Voltar para Dono</span>
+                  </>
+                )}
+              </button>
+
               {/* Badge de Papel e Nome */}
               <div className="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-lg bg-white/5 border border-white/10">
                 {papel === 'dono' ? (

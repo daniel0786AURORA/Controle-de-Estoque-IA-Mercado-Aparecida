@@ -135,6 +135,17 @@ BEGIN
     ON CONFLICT DO NOTHING;
 
     -- 9. VENDAS HISTÓRICAS E DO DIA
+    INSERT INTO public.venda (id, empresa_id, operador_id, total, custo_total, desconto, forma_pagamento, taxa, criado_em)
+    VALUES
+        (v_hist_1, v_empresa_id, NULL, 1196.00, 860.00, 0.00, 'pix', 0.00, now() - INTERVAL '25 days'),
+        (v_hist_2, v_empresa_id, NULL, 439.50, 295.00, 0.00, 'dinheiro', 0.00, now() - INTERVAL '20 days'),
+        (v_hist_3, v_empresa_id, NULL, 419.40, 306.00, 0.00, 'debito', 5.87, now() - INTERVAL '18 days'),
+        (v_hist_4, v_empresa_id, NULL, 374.25, 285.00, 0.00, 'pix', 0.00, now() - INTERVAL '15 days'),
+        (v_hist_5, v_empresa_id, NULL, 524.50, 360.00, 0.00, 'credito', 16.78, now() - INTERVAL '12 days'),
+        (v_hist_6, v_empresa_id, NULL, 149.40, 99.00, 0.00, 'dinheiro', 0.00, now() - INTERVAL '10 days'),
+        (v_hist_7, v_empresa_id, NULL, 159.80, 90.00, 0.00, 'pix', 0.00, now() - INTERVAL '8 days')
+    ON CONFLICT (id) DO NOTHING;
+
     -- Venda 1 (Hoje - PIX)
     INSERT INTO public.venda (id, empresa_id, operador_id, total, custo_total, desconto, forma_pagamento, taxa, criado_em)
     VALUES (v_venda_1, v_empresa_id, NULL, 48.17, 34.15, 0.00, 'pix', 0.00, now() - INTERVAL '2 hours')

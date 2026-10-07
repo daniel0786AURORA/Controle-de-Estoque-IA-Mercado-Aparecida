@@ -399,6 +399,56 @@ const VENDAS_HOJE_INICIAIS = [
   },
 ];
 
+const PROMOCOES_INICIAIS = [
+  {
+    id: 'promo_iogurte_demo',
+    empresa_id: EMPRESA_ID_PADRAO,
+    produto_id: 'prod_iogurte_danone',
+    percentual: 20,
+    inicio: criarDataRelativa(-1),
+    fim: criarDataRelativa(5),
+    motivo: 'Queima de lote próximo do vencimento',
+    ativa: true,
+    criado_em: new Date().toISOString(),
+  },
+];
+
+const RELATORIOS_INICIAIS = [
+  {
+    id: 'relatorio_demo_diario',
+    empresa_id: EMPRESA_ID_PADRAO,
+    tipo: 'diario',
+    data_inicio: new Date().toISOString().split('T')[0],
+    data_fim: new Date().toISOString().split('T')[0],
+    texto: JSON.stringify({
+      resumo_executivo: 'O mercado tem vendas saudáveis, mas há capital preso em itens de giro lento e perecíveis próximos do vencimento.',
+      insights: [
+        {
+          titulo: 'Capital parado',
+          analise: 'Palmito, café, sabão e perecíveis concentram aproximadamente R$ 4 mil em estoque de baixo giro.',
+          acao_pratica: 'Suspender reposição desses itens e criar liquidação seletiva.'
+        },
+        {
+          titulo: 'Reposição',
+          analise: 'Os itens de maior giro estão com cobertura menor e merecem prioridade no próximo pedido.',
+          acao_pratica: 'Gerar a lista de compras pelos produtos com menor cobertura.'
+        }
+      ],
+      recomendacao_geral: 'Use o caixa liberado do estoque lento para reforçar os itens que giram mais rápido.'
+    }),
+    dados: {
+      faturamento_total: 327.1,
+      custo_total: 220,
+      taxas: 5.42,
+      perdas: 7.6,
+      lucro_bruto: 94.08,
+      vendas_qtd: 4,
+      ticket_medio: 81.78,
+    },
+    criado_em: new Date().toISOString(),
+  },
+];
+
 class MockDatabaseService {
   private produtos: Produto[] = [...PRODUTOS_INICIAIS];
   private categorias: Categoria[] = [...CATEGORIAS_INICIAIS];
@@ -407,6 +457,8 @@ class MockDatabaseService {
   private giro30d: Record<string, { vendido_30d: number; media_dia: number }> = { ...GIRO_30D_INICIAL };
   private vendas: any[] = [...VENDAS_HOJE_INICIAIS];
   private itensVenda: any[] = [];
+  private promocoes: any[] = [...PROMOCOES_INICIAIS];
+  private relatorios: any[] = [...RELATORIOS_INICIAIS];
   private configTaxa = {
     empresa_id: EMPRESA_ID_PADRAO,
     dinheiro: 0.0,
@@ -428,6 +480,8 @@ class MockDatabaseService {
         localStorage.setItem('mercado_mock_lotes', JSON.stringify(this.lotes));
         localStorage.setItem('mercado_mock_saldos', JSON.stringify(this.saldos));
         localStorage.setItem('mercado_mock_vendas', JSON.stringify(this.vendas));
+        localStorage.setItem('mercado_mock_promocoes', JSON.stringify(this.promocoes));
+        localStorage.setItem('mercado_mock_relatorios', JSON.stringify(this.relatorios));
       }
     } catch (e) {
       // Ignora erro de cota de armazenamento
@@ -451,6 +505,12 @@ class MockDatabaseService {
 
         const ven = localStorage.getItem('mercado_mock_vendas');
         if (ven) this.vendas = JSON.parse(ven);
+
+        const pro = localStorage.getItem('mercado_mock_promocoes');
+        if (pro) this.promocoes = JSON.parse(pro);
+
+        const rel = localStorage.getItem('mercado_mock_relatorios');
+        if (rel) this.relatorios = JSON.parse(rel);
       }
     } catch (e) {
       // Usa dados padrão

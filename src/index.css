@@ -1,1 +1,207 @@
 @import "tailwindcss";
+
+:root {
+  color-scheme: light;
+  --app-bg: #f5f7f4;
+  --app-surface: #ffffff;
+  --app-surface-soft: #f8faf8;
+  --app-border: #e3e8e3;
+  --app-border-strong: #d7ddd7;
+  --app-text: #17231e;
+  --app-muted: #66736d;
+  --app-green: #0e7a4f;
+  --app-green-strong: #0a6240;
+  --app-green-soft: #eaf6ef;
+  --app-danger: #c4361a;
+  --app-warning: #9a6110;
+  --app-shadow-sm: 0 1px 2px rgba(20, 33, 28, 0.04), 0 6px 20px rgba(20, 33, 28, 0.035);
+  --app-shadow-md: 0 10px 30px rgba(20, 33, 28, 0.075);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--app-bg);
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background:
+    radial-gradient(circle at 15% -10%, rgba(14, 122, 79, 0.07), transparent 28rem),
+    linear-gradient(180deg, #f8faf7 0%, var(--app-bg) 34rem);
+  color: var(--app-text);
+  font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+  background: rgba(14, 122, 79, 0.16);
+}
+
+/* Global application polish. This intentionally changes presentation only. */
+.app-surface {
+  background: transparent;
+}
+
+.app-surface > div {
+  animation: app-page-in 180ms ease-out;
+}
+
+.app-surface .bg-white.rounded-xl,
+.app-surface .bg-white.rounded-2xl {
+  border-color: var(--app-border) !important;
+  box-shadow: var(--app-shadow-sm) !important;
+}
+
+.app-surface .bg-white.rounded-xl:hover,
+.app-surface .bg-white.rounded-2xl:hover {
+  border-color: var(--app-border-strong) !important;
+}
+
+.app-surface table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.app-surface thead {
+  background: #f7f9f7 !important;
+}
+
+.app-surface thead th {
+  color: #68766f !important;
+  font-size: 0.72rem;
+  letter-spacing: 0.035em;
+  text-transform: uppercase;
+  font-weight: 700 !important;
+}
+
+.app-surface tbody tr {
+  transition: background-color 140ms ease, transform 140ms ease;
+}
+
+.app-surface tbody tr:hover {
+  background-color: #f8faf8 !important;
+}
+
+.app-surface input,
+.app-surface select,
+.app-surface textarea {
+  border-color: var(--app-border-strong) !important;
+  background-color: rgba(255, 255, 255, 0.96);
+  box-shadow: inset 0 1px 0 rgba(20, 33, 28, 0.02);
+}
+
+.app-surface input:focus,
+.app-surface select:focus,
+.app-surface textarea:focus {
+  border-color: rgba(14, 122, 79, 0.65) !important;
+  box-shadow: 0 0 0 3px rgba(14, 122, 79, 0.10) !important;
+}
+
+.app-surface button {
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease,
+    box-shadow 150ms ease,
+    transform 150ms ease;
+}
+
+.app-surface button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.app-surface h1 {
+  letter-spacing: -0.035em;
+}
+
+.app-surface h2,
+.app-surface h3 {
+  letter-spacing: -0.02em;
+}
+
+.app-surface .shadow-sm {
+  box-shadow: var(--app-shadow-sm) !important;
+}
+
+.app-surface .animate-pulse {
+  background-image: linear-gradient(90deg, rgba(20, 33, 28, 0.04), rgba(20, 33, 28, 0.085), rgba(20, 33, 28, 0.04));
+  background-size: 240% 100%;
+  animation: app-shimmer 1.35s linear infinite;
+}
+
+.no-scrollbar::-webkit-scrollbar,
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar,
+.scrollbar-none {
+  scrollbar-width: none;
+}
+
+.app-scrollbar::-webkit-scrollbar,
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.app-scrollbar::-webkit-scrollbar-thumb,
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #cfd7d1;
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.app-scrollbar::-webkit-scrollbar-track,
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@keyframes app-page-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes app-shimmer {
+  from { background-position: 120% 0; }
+  to { background-position: -120% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-surface > div,
+  .app-surface .animate-pulse {
+    animation: none !important;
+  }
+
+  .app-surface button,
+  .app-surface tbody tr {
+    transition: none !important;
+  }
+}

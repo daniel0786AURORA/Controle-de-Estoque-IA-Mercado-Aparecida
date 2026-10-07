@@ -123,7 +123,7 @@ const ModalCriarPromocao: React.FC<ModalCriarPromocaoProps> = ({ isOpen, onClose
           percentual,
           fim: dataFim,
           motivo: 'manual'
-        }).eq('id', promoId);
+        }).eq('id', promoId).eq('empresa_id', empresaId);
       } else {
         const { data, error } = await supabase.from('promocao').insert({
           empresa_id: empresaId,
@@ -507,7 +507,8 @@ export const ValidadePage: React.FC = () => {
       try {
         const { data: estData, error: estErr } = await supabase
           .from('v_estoque')
-          .select('*');
+          .select('*')
+          .eq('empresa_id', empresaId);
           
         if (!estErr && estData) {
           estData.forEach((est: any) => {
@@ -644,7 +645,7 @@ export const ValidadePage: React.FC = () => {
   const handleConfirmarCancelamento = async () => {
     if (!promoParaCancelar) return;
     try {
-      await supabase.from('promocao').update({ ativa: false }).eq('id', promoParaCancelar);
+      await supabase.from('promocao').update({ ativa: false }).eq('id', promoParaCancelar).eq('empresa_id', empresaId);
       setPromocoes(prev => prev.filter(p => p.id !== promoParaCancelar));
       setPromoParaCancelar(null);
     } catch (e) {

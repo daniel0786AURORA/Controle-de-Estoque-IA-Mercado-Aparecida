@@ -45,9 +45,6 @@ BEGIN
         RAISE EXCEPTION 'Somente um dono pode autorizar desconto acima do limite';
     END IF;
 
-    DELETE FROM private.autorizacao_caixa
-     WHERE expira_em < now() - INTERVAL '1 day';
-
     INSERT INTO private.autorizacao_caixa (empresa_id, autorizador_id)
     VALUES (v_empresa_id, v_user_id)
     RETURNING token INTO v_token;

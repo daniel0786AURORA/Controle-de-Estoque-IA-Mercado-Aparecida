@@ -435,13 +435,26 @@ export const supabase: any = {
   },
 
   rpc: async (fn: string, params: any) => {
-    if (fn === 'fechar_venda') {
-      console.log('[RPC fechar_venda Mock Executado]:', params);
-      const vendaId = mockDatabase.fecharVendaRPC({
-        p_itens: params.p_itens || [],
-        p_forma: params.p_forma || 'dinheiro',
-      });
-      return { data: vendaId, error: null };
+    if (fallbackToMock && fn === 'fechar_venda') {
+      try {
+        const vendaId = mockDatabase.fecharVendaRPC({
+          p_itens: params.p_itens || [],
+          p_forma: params.p_forma || 'dinheiro',
+          p_desconto_motivo: params.p_desconto_motivo || null,
+        });
+        return { data: vendaId, error: null };
+      } catch (err: any) {
+        return { data: null, error: { message: err?.message || 'Falha no fechamento da venda demo.' } };
+      }
+    }
+
+    if (fallbackToMock && fn === 'registrar_entrada_produto') {
+      try {
+        const produtoId = mockDatabase.registrarEntradaProdutoRPC(params || {});
+        return { data: produtoId, error: null };
+      } catch (err: any) {
+        return { data: null, error: { message: err?.message || 'Falha ao registrar entrada demo.' } };
+      }
     }
     if (!fallbackToMock) {
       try {

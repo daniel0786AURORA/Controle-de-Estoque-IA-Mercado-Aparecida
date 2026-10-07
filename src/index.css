@@ -232,3 +232,82 @@ button, a, input, select, textarea {
     transition: none !important;
   }
 }
+
+
+/* Delicate decorative interaction layer */
+.app-surface .bg-white.rounded-xl,
+.app-surface .bg-white.rounded-2xl {
+  position: relative;
+  overflow: hidden;
+}
+
+.app-surface .bg-white.rounded-xl::after,
+.app-surface .bg-white.rounded-2xl::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    linear-gradient(120deg, rgba(255,255,255,.55), transparent 28%, transparent 72%, rgba(94,190,143,.05)),
+    radial-gradient(circle at 18% 0%, rgba(126,219,172,.07), transparent 30%);
+  opacity: .52;
+  transition: opacity 220ms ease;
+}
+
+.app-surface .bg-white.rounded-xl:hover::after,
+.app-surface .bg-white.rounded-2xl:hover::after {
+  opacity: .86;
+}
+
+.app-surface [class*="bg-[#0E7A4F]"],
+.app-surface [class*="bg-[#16845A]"] {
+  box-shadow: 0 8px 20px rgba(22,132,90,.14);
+}
+
+@media (max-width: 1280px) {
+  .app-surface {
+    font-size: 0.95rem;
+  }
+
+  .app-surface [class*="rounded-xl"],
+  .app-surface [class*="rounded-2xl"] {
+    border-radius: 14px;
+  }
+
+  .app-surface table {
+    font-size: .88rem;
+  }
+
+  .app-surface thead th {
+    font-size: .66rem;
+  }
+}
+
+@media (max-width: 1024px) {
+  .app-surface {
+    font-size: 0.92rem;
+  }
+
+  .app-surface table {
+    font-size: .84rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .app-surface::before,
+  .app-surface::after {
+    opacity: .28;
+    filter: blur(90px);
+  }
+
+  .app-surface .bg-white.rounded-xl:hover,
+  .app-surface .bg-white.rounded-2xl:hover,
+  .app-surface button:hover:not(:disabled) {
+    transform: none;
+  }
+
+  .app-surface table {
+    font-size: .8rem;
+  }
+}

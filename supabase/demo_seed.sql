@@ -51,12 +51,14 @@ BEGIN
     ON CONFLICT (id) DO NOTHING;
 
     -- 2. PERFIS DE DEMO
-    -- Nota: em instâncias reais com Supabase Auth, estes IDs devem coincidir com auth.users
+    -- Desativado: perfis devem apontar para usuários reais do ambiente.
+    IF false THEN
     INSERT INTO public.perfil (id, empresa_id, nome, papel, criado_em)
     VALUES 
         (v_user_dono_id, v_empresa_id, 'Daniel (Administrador Demo)', 'dono', now() - INTERVAL '180 days'),
         (v_user_op_id, v_empresa_id, 'Caixa Operador 01 (Demo)', 'operador', now() - INTERVAL '180 days')
     ON CONFLICT (id) DO UPDATE SET nome = EXCLUDED.nome, papel = EXCLUDED.papel;
+    END IF;
 
     -- 3. CONFIGURAÇÃO DE TAXAS DA MAQUININHA
     INSERT INTO public.config_taxa (empresa_id, dinheiro, pix, debito, credito, desconto_max_operador)
@@ -128,7 +130,7 @@ BEGIN
     -- 9. VENDAS HISTÓRICAS E DO DIA
     -- Venda 1 (Hoje - PIX)
     INSERT INTO public.venda (id, empresa_id, operador_id, total, custo_total, desconto, forma_pagamento, taxa, criado_em)
-    VALUES (v_venda_1, v_empresa_id, v_user_op_id, 47.38, 33.30, 0.00, 'pix', 0.00, now() - INTERVAL '2 hours')
+    VALUES (v_venda_1, v_empresa_id, NULL, 47.38, 33.30, 0.00, 'pix', 0.00, now() - INTERVAL '2 hours')
     ON CONFLICT (id) DO NOTHING;
 
     INSERT INTO public.venda_item (venda_id, produto_id, quantidade, preco_unit, custo_unit, desconto_unit)
@@ -149,7 +151,7 @@ BEGIN
 
     -- Venda 2 (Hoje - Cartão Crédito)
     INSERT INTO public.venda (id, empresa_id, operador_id, total, custo_total, desconto, forma_pagamento, taxa, criado_em)
-    VALUES (v_venda_2, v_empresa_id, v_user_op_id, 44.28, 31.50, 0.00, 'credito', 1.42, now() - INTERVAL '1 hour')
+    VALUES (v_venda_2, v_empresa_id, NULL, 44.28, 31.50, 0.00, 'credito', 1.42, now() - INTERVAL '1 hour')
     ON CONFLICT (id) DO NOTHING;
 
     INSERT INTO public.venda_item (venda_id, produto_id, quantidade, preco_unit, custo_unit, desconto_unit)
@@ -166,7 +168,7 @@ BEGIN
 
     -- Venda 3 (Hoje - Dinheiro com Desconto de Operador)
     INSERT INTO public.venda (id, empresa_id, operador_id, total, custo_total, desconto, desconto_motivo, forma_pagamento, taxa, criado_em)
-    VALUES (v_venda_3, v_empresa_id, v_user_op_id, 14.00, 9.60, 0.97, 'Arredondamento centavos', 'dinheiro', 0.00, now() - INTERVAL '30 minutes')
+    VALUES (v_venda_3, v_empresa_id, NULL, 14.00, 9.60, 0.97, 'Arredondamento centavos', 'dinheiro', 0.00, now() - INTERVAL '30 minutes')
     ON CONFLICT (id) DO NOTHING;
 
     INSERT INTO public.venda_item (venda_id, produto_id, quantidade, preco_unit, custo_unit, desconto_unit)

@@ -49,7 +49,7 @@ const ABAS_OPERADOR: ItemAba[] = [
 ];
 
 export const Layout: React.FC<LayoutProps> = ({ rotaAtiva, aoMudarRota, children }) => {
-  const { usuario, perfil, papel, logout, alternarPapelTeste } = useAuth();
+  const { usuario, perfil, papel, logout, alternarPapelTeste, modoTeste } = useAuth();
 
   const abasDisponiveis = papel === 'operador' ? ABAS_OPERADOR : TODAS_ABAS_DONO;
 
@@ -80,8 +80,8 @@ export const Layout: React.FC<LayoutProps> = ({ rotaAtiva, aoMudarRota, children
 
             {/* Usuário, Papel e Botão Sair */}
             <div className="flex items-center gap-2 sm:gap-3">
-              {/* Botão de Alternância de Papel para Testes */}
-              <button
+              {/* Botão de alternância visível apenas no modo demonstração */}
+              {modoTeste && <button
                 id="toggle-papel-teste-btn"
                 onClick={() => alternarPapelTeste()}
                 title="Alternar entre perfil de Dono (todas as abas) e Operador (apenas Caixa)"
@@ -98,7 +98,7 @@ export const Layout: React.FC<LayoutProps> = ({ rotaAtiva, aoMudarRota, children
                     <span className="hidden sm:inline">Voltar para Dono</span>
                   </>
                 )}
-              </button>
+              </button>}
 
               {/* Badge de Papel e Nome */}
               <div className="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-lg bg-white/5 border border-white/10">

@@ -348,61 +348,34 @@ export const CaixaPage: React.FC = () => {
     setMensagemErroVenda(null);
     setMensagemSucesso(null);
 
-    // PASSO 1, 2 e 3: Preparar itens, calcular rateio e descontos
-    const totalDaVenda = totalComDescontoItem; // total antes do desconto manual
+    // O frontend apenas calcula o preço final para UX. O banco recalcula custo,
+    // promoção, desconto, taxa e autorização dentro da mesma transação.
+    const totalDaVenda = totalComDescontoItem;
     const descontoManualTotal = descontoAplicadoValor;
 
-    const itensCalculados = carrinho.map((item) => {
-      // Passo 1
-      const precoCheio = Number(item.preco_cheio || 0);
-      const precoPromocional = Number(item.preco_venda || 0);
-      const descontoPromo = Math.max(0, precoCheio - precoPromocional);
-
-      // Passo 2
+    const itensParaRpc = carrinho.map((item) => {
       let descontoCaixaPorUnidade = 0;
+
       if (descontoManualTotal > 0 && totalDaVenda > 0) {
-        const subtotalDoItem = item.subtotal; // item.preco_venda * item.quantidade
-        const descontoCaixaDoItem = descontoManualTotal * (subtotalDoItem / totalDaVenda);
+        const descontoCaixaDoItem = descontoManualTotal * (item.subtotal / totalDaVenda);
         descontoCaixaPorUnidade = descontoCaixaDoItem / item.quantidade;
       }
 
-      // Passo 3
-      const descontoUnit = descontoPromo + descontoCaixaPorUnidade;
-      let descontoOrigem: 'ambos' | 'promocao' | 'caixa' | null = null;
-      
-      if (descontoPromo > 0 && descontoCaixaPorUnidade > 0) {
-         descontoOrigem = 'ambos';
-      } else if (descontoPromo > 0) {
-         descontoOrigem = 'promocao';
-      } else if (descontoCaixaPorUnidade > 0) {
-         descontoOrigem = 'caixa';
-      }
-
-      // Preço final que vai pro RPC
-      const precoFinal = precoCheio - descontoUnit;
+      const precoFinal = Math.max(0, Number(item.preco_venda) - descontoCaixaPorUnidade);
 
       return {
         produto_id: item.id,
         quantidade: item.quantidade,
-        preco_unit: precoFinal,
-        custo_unit: item.custo,
-        desconto_unit: descontoUnit,
-        desconto_origem: descontoOrigem
+        preco_unit: Number(precoFinal.toFixed(2)),
       };
     });
 
     try {
-      // PASSO 4: Chamar fechar_venda
-      console.log('Enviando itens para RPC fechar_venda:', itensCalculados);
       const { data, error } = await supabase.rpc('fechar_venda', {
-        p_itens: itensCalculados.map(i => ({
-           produto_id: i.produto_id,
-           quantidade: i.quantidade,
-           preco_unit: i.preco_unit,
-           custo_unit: i.custo_unit,
-           desconto_unit: i.desconto_unit // Envia, mesmo sabendo que a RPC talvez não salve
-        })),
+        p_itens: itensParaRpc,
         p_forma: forma,
+        p_desconto_motivo: descontoManualTotal > 0 ? descontoMotivo : null,
+        p_autorizador_id: descontoManualTotal > 0 ? descontoAplicadoPor : null,
       });
 
       if (error) {
@@ -410,55 +383,12 @@ export const CaixaPage: React.FC = () => {
         setMensagemErroVenda(error.message || 'Falha ao registrar venda.');
         return;
       }
-      
-      // A RPC precisa retornar inequivocamente o ID da venda criada.
-      // Buscar "a última venda do operador" é inseguro em cenários concorrentes e pode
-      // aplicar desconto/metadados na venda errada.
+
       const vendaId = data;
       if (!vendaId || typeof vendaId !== 'string' || vendaId.length < 10) {
-        setMensagemErroVenda('A venda foi processada, mas o servidor não retornou um identificador confiável. Não foram aplicadas alterações adicionais. Contate o administrador.');
+        setMensagemErroVenda('O servidor não retornou um identificador válido para a venda. A operação precisa ser verificada antes de continuar.');
         console.error('RPC fechar_venda não retornou UUID confiável:', data);
         return;
-      }
-
-      // PASSO 5: Updates diretos (temporário até todos os metadados entrarem na transação da RPC)
-      if (vendaId) {
-         // a) Update na tabela venda (se houve desconto manual)
-         if (descontoManualTotal > 0 && usuario) {
-            const vendaUpdate = {
-              desconto: descontoManualTotal,
-              desconto_por: descontoAplicadoPor || usuario.id,
-              desconto_motivo: descontoMotivo || 'Não informado'
-            };
-            console.log('Atualizando venda (desconto manual):', vendaId, vendaUpdate);
-            const { error: erroVenda } = await supabase.from('venda').update(vendaUpdate).eq('id', vendaId);
-            if (erroVenda) {
-               console.error('Erro ao atualizar desconto na venda:', erroVenda);
-               setMensagemErroVenda(erroVenda.message || 'Falha ao gravar desconto no total da venda.');
-               return; // Parar fluxo se der erro
-            }
-         }
-
-         // b) Update na tabela venda_item por item que teve desconto
-         for (const item of itensCalculados) {
-            if (item.desconto_unit > 0) {
-               const itemUpdate = {
-                 desconto_unit: item.desconto_unit,
-                 desconto_origem: item.desconto_origem
-               };
-               console.log(`Atualizando venda_item (venda: ${vendaId}, produto: ${item.produto_id}):`, itemUpdate);
-               const { error: erroItem } = await supabase.from('venda_item')
-                  .update(itemUpdate)
-                  .eq('venda_id', vendaId)
-                  .eq('produto_id', item.produto_id);
-                  
-               if (erroItem) {
-                  console.error(`Erro ao atualizar desconto no item ${item.produto_id}:`, erroItem);
-                  setMensagemErroVenda(erroItem.message || 'Falha ao gravar descontos nos itens.');
-                  return; // Parar fluxo
-               }
-            }
-         }
       }
 
       const totalFinal = totalComDescontoItem - descontoManualTotal;

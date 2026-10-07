@@ -147,14 +147,43 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccessLogin }) => {
                 <span>Entrando no sistema...</span>
               </>
             ) : (
-              <span>Entrar</span>
+              <span>Entrar com Credenciais</span>
             )}
           </button>
         </form>
 
+        {/* Atalho Direto de Teste */}
+        <div className="mt-4 pt-4 border-t border-[#14211C]/10 space-y-2">
+          <p className="text-xs text-center text-[#14211C]/70 font-medium">
+            Ambiente de Teste / Demonstração:
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              id="btn-login-teste-dono"
+              onClick={() => {
+                login('daniel@mercadoaparecida.com.br', 'teste123').then(() => onSuccessLogin?.());
+              }}
+              className="py-2.5 px-3 rounded-lg bg-[#14211C] hover:bg-[#14211C]/90 text-white text-xs font-semibold flex items-center justify-center text-center transition-colors shadow-sm cursor-pointer"
+            >
+              Testar como Dono
+            </button>
+            <button
+              type="button"
+              id="btn-login-teste-operador"
+              onClick={() => {
+                login('operador@mercadoaparecida.com.br', 'teste123').then(() => onSuccessLogin?.());
+              }}
+              className="py-2.5 px-3 rounded-lg bg-[#EEF1EC] hover:bg-[#14211C]/10 text-[#14211C] text-xs font-semibold flex items-center justify-center text-center transition-colors border border-[#14211C]/20 cursor-pointer"
+            >
+              Testar como Caixa
+            </button>
+          </div>
+        </div>
+
         {/* Nota sobre cadastro restrito */}
-        <div className="mt-6 pt-4 border-t border-[#14211C]/10 text-center text-xs text-[#14211C]/60">
-          Acesso restrito a usuários autorizados. Não há cadastro público.
+        <div className="mt-4 text-center text-xs text-[#14211C]/60">
+          Modo de teste disponível para visualização e operações sem login.
         </div>
       </div>
     </div>

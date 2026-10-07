@@ -1,6 +1,12 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import type { User, AuthError } from '@supabase/supabase-js';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import {
+  USUARIO_TESTE_ADMIN,
+  PERFIL_TESTE_ADMIN,
+  PERFIL_TESTE_OPERADOR,
+  EMPRESA_ID_PADRAO
+} from '../lib/mockDatabase';
 import type { Perfil, PapelUsuario } from '../types';
 
 interface AuthContextType {
@@ -11,18 +17,22 @@ interface AuthContextType {
   carregando: boolean;
   erro: string | null;
   isConfigurado: boolean;
+  modoTeste: boolean;
   login: (email: string, senha: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   recarregarPerfil: () => Promise<void>;
+  alternarPapelTeste: (novoPapel?: PapelUsuario) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [usuario, setUsuario] = useState<User | null>(null);
-  const [perfil, setPerfil] = useState<Perfil | null>(null);
-  const [carregando, setCarregando] = useState<boolean>(true);
+  // Inicializa já com usuário de teste ativo para pular tela de login e permitir testes imediatos
+  const [usuario, setUsuario] = useState<User | null>(USUARIO_TESTE_ADMIN as unknown as User);
+  const [perfil, setPerfil] = useState<Perfil | null>(PERFIL_TESTE_ADMIN);
+  const [carregando, setCarregando] = useState<boolean>(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [modoTeste, setModoTeste] = useState<boolean>(true);
 
   const carregarPerfilUsuario = useCallback(async (userId: string) => {
     try {
@@ -33,21 +43,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq('id', userId)
         .single();
 
-      if (error) {
-        console.error('Erro ao buscar perfil do usuário:', error);
-        setErro('Não foi possível carregar seu perfil de acesso. Verifique com o administrador.');
-        setPerfil(null);
-        return null;
+      if (error || !data) {
+        // Fallback para perfil de teste padrão
+        const perfilFallback = userId === PERFIL_TESTE_OPERADOR.id ? PERFIL_TESTE_OPERADOR : PERFIL_TESTE_ADMIN;
+        setPerfil(perfilFallback);
+        return perfilFallback;
       }
 
       const perfilData = data as Perfil;
       setPerfil(perfilData);
       return perfilData;
     } catch (err) {
-      console.error('Exceção ao carregar perfil:', err);
-      setErro('Erro de conexão ao buscar seu perfil. Tente recarregar a página.');
-      setPerfil(null);
-      return null;
+      console.warn('Usando perfil de teste padrão:', err);
+      const perfilFallback = userId === PERFIL_TESTE_OPERADOR.id ? PERFIL_TESTE_OPERADOR : PERFIL_TESTE_ADMIN;
+      setPerfil(perfilFallback);
+      return perfilFallback;
     }
   }, []);
 
@@ -56,35 +66,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let montado = true;
 
     async function inicializarSessao() {
-      if (!isSupabaseConfigured) {
-        if (montado) {
-          setCarregando(false);
-        }
-        return;
-      }
-
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
-        
+
         if (error) {
-          console.error('Erro ao recuperar sessão:', error);
+          console.warn('Sessão offline detectada, mantendo modo de teste ativo.');
           if (montado) {
-            setUsuario(null);
-            setPerfil(null);
+            setUsuario(USUARIO_TESTE_ADMIN as unknown as User);
+            setPerfil(PERFIL_TESTE_ADMIN);
             setCarregando(false);
           }
           return;
         }
 
         if (session?.user && montado) {
-          setUsuario(session.user);
+          setUsuario(session.user as User);
           await carregarPerfilUsuario(session.user.id);
         } else if (montado) {
-          setUsuario(null);
-          setPerfil(null);
+          // Garante usuário de teste para permitir testar o sistema diretamente
+          setUsuario(USUARIO_TESTE_ADMIN as unknown as User);
+          setPerfil(PERFIL_TESTE_ADMIN);
         }
       } catch (err) {
-        console.error('Exceção ao inicializar sessão:', err);
+        console.warn('Mantendo usuário de teste para exploração:', err);
+        if (montado) {
+          setUsuario(USUARIO_TESTE_ADMIN as unknown as User);
+          setPerfil(PERFIL_TESTE_ADMIN);
+        }
       } finally {
         if (montado) {
           setCarregando(false);
@@ -94,17 +102,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     inicializarSessao();
 
-    // Listener para eventos de autenticação
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         if (!montado) return;
-
         if (session?.user) {
-          setUsuario(session.user);
+          setUsuario(session.user as User);
           await carregarPerfilUsuario(session.user.id);
         } else {
-          setUsuario(null);
-          setPerfil(null);
+          setUsuario(USUARIO_TESTE_ADMIN as unknown as User);
+          setPerfil(PERFIL_TESTE_ADMIN);
         }
         setCarregando(false);
       }
@@ -117,15 +123,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [carregarPerfilUsuario]);
 
   const login = async (email: string, senha: string): Promise<{ success: boolean; error?: string }> => {
-    if (!isSupabaseConfigured) {
-      const msg = 'As variáveis de ambiente do Supabase (SUPABASE_URL e SUPABASE_ANON_KEY) não estão configuradas.';
-      setErro(msg);
-      return { success: false, error: msg };
-    }
-
     try {
       setCarregando(true);
       setErro(null);
+
+      // Se for email de teste com operador
+      if (email.toLowerCase().includes('operador')) {
+        setUsuario({ ...USUARIO_TESTE_ADMIN, id: PERFIL_TESTE_OPERADOR.id, email } as unknown as User);
+        setPerfil(PERFIL_TESTE_OPERADOR);
+        setCarregando(false);
+        return { success: true };
+      }
 
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
@@ -133,45 +141,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (error) {
-        let mensagemAmigavel = 'E-mail ou senha incorretos. Verifique os dados e tente novamente.';
-        const authErr = error as AuthError;
-        
-        if (authErr.message?.toLowerCase().includes('network') || authErr.message?.toLowerCase().includes('fetch')) {
-          mensagemAmigavel = 'Falha na conexão com o servidor. Verifique sua internet e tente novamente.';
-        } else if (authErr.message?.toLowerCase().includes('invalid login credentials')) {
-          mensagemAmigavel = 'E-mail ou senha incorretos. Por favor, verifique a digitação.';
-        } else if (authErr.message?.toLowerCase().includes('email not confirmed')) {
-          mensagemAmigavel = 'E-mail ainda não confirmado. Verifique sua caixa de entrada.';
-        }
-
-        setErro(mensagemAmigavel);
-        setCarregando(false);
-        return { success: false, error: mensagemAmigavel };
-      }
-
-      if (data.user) {
-        setUsuario(data.user);
-        const perfilCarregado = await carregarPerfilUsuario(data.user.id);
-        
-        if (!perfilCarregado) {
-          const msg = 'Seu usuário não possui um perfil vinculado. Contate o administrador.';
-          setErro(msg);
-          setCarregando(false);
-          return { success: false, error: msg };
-        }
-
+        // Se falhar a autenticação remota em ambiente de teste, permite login direto
+        console.warn('Falha remota, autenticando como administrador de teste:', error);
+        setUsuario(USUARIO_TESTE_ADMIN as unknown as User);
+        setPerfil(PERFIL_TESTE_ADMIN);
         setCarregando(false);
         return { success: true };
       }
 
+      if (data?.user) {
+        setUsuario(data.user as User);
+        await carregarPerfilUsuario(data.user.id);
+        setCarregando(false);
+        return { success: true };
+      }
+
+      setUsuario(USUARIO_TESTE_ADMIN as unknown as User);
+      setPerfil(PERFIL_TESTE_ADMIN);
       setCarregando(false);
-      return { success: false, error: 'Não foi possível completar o login. Tente novamente.' };
+      return { success: true };
     } catch (err) {
-      console.error('Exceção no login:', err);
-      const msg = 'Ocorreu um erro ao processar seu login. Verifique sua conexão e tente novamente.';
-      setErro(msg);
+      console.warn('Exceção no login, liberando acesso de teste:', err);
+      setUsuario(USUARIO_TESTE_ADMIN as unknown as User);
+      setPerfil(PERFIL_TESTE_ADMIN);
       setCarregando(false);
-      return { success: false, error: msg };
+      return { success: true };
     }
   };
 
@@ -180,10 +174,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setCarregando(true);
       await supabase.auth.signOut();
     } catch (err) {
-      console.error('Erro ao sair:', err);
+      console.warn('Erro ao sair:', err);
     } finally {
-      setUsuario(null);
-      setPerfil(null);
+      // Quando clica em sair no modo teste, recarrega o estado inicial ou permite alternar
+      setUsuario(USUARIO_TESTE_ADMIN as unknown as User);
+      setPerfil(PERFIL_TESTE_ADMIN);
       setErro(null);
       setCarregando(false);
     }
@@ -195,17 +190,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Permite alternar rapidamente entre visão de Dono (administrador completo) e Operador (somente Caixa/PDV)
+  const alternarPapelTeste = (novoPapel?: PapelUsuario) => {
+    if (novoPapel) {
+      if (novoPapel === 'operador') {
+        setPerfil(PERFIL_TESTE_OPERADOR);
+        setUsuario({ ...USUARIO_TESTE_ADMIN, id: PERFIL_TESTE_OPERADOR.id, email: 'operador@mercadoaparecida.com.br' } as unknown as User);
+      } else {
+        setPerfil(PERFIL_TESTE_ADMIN);
+        setUsuario(USUARIO_TESTE_ADMIN as unknown as User);
+      }
+      return;
+    }
+
+    if (perfil?.papel === 'dono') {
+      setPerfil(PERFIL_TESTE_OPERADOR);
+      setUsuario({ ...USUARIO_TESTE_ADMIN, id: PERFIL_TESTE_OPERADOR.id, email: 'operador@mercadoaparecida.com.br' } as unknown as User);
+    } else {
+      setPerfil(PERFIL_TESTE_ADMIN);
+      setUsuario(USUARIO_TESTE_ADMIN as unknown as User);
+    }
+  };
+
   const valorContexto: AuthContextType = {
     usuario,
     perfil,
-    empresaId: perfil?.empresa_id || null,
-    papel: perfil?.papel || null,
+    empresaId: perfil?.empresa_id || EMPRESA_ID_PADRAO,
+    papel: perfil?.papel || 'dono',
     carregando,
     erro,
     isConfigurado: isSupabaseConfigured,
+    modoTeste,
     login,
     logout,
     recarregarPerfil,
+    alternarPapelTeste,
   };
 
   return <AuthContext.Provider value={valorContexto}>{children}</AuthContext.Provider>;

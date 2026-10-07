@@ -167,10 +167,12 @@ export const CadastrarPage: React.FC = () => {
 
   // Carrega categorias do banco
   const carregarCategorias = useCallback(async () => {
+    if (!empresaId) return;
     try {
       const { data, error } = await supabase
         .from('categoria')
         .select('*')
+        .eq('empresa_id', empresaId)
         .order('nome', { ascending: true });
 
       if (error) {
@@ -184,10 +186,11 @@ export const CadastrarPage: React.FC = () => {
     } catch (err) {
       console.error('Exceção ao buscar categorias:', err);
     }
-  }, []);
+  }, [empresaId]);
 
   // Carrega as últimas 10 entradas do dia atual
   const carregarUltimasEntradas = useCallback(async () => {
+    if (!empresaId) return;
     try {
       setCarregandoEntradas(true);
       const inicioDiaSP = obterInicioDoDiaSP();
@@ -196,6 +199,7 @@ export const CadastrarPage: React.FC = () => {
       const { data: movimentosData, error } = await supabase
         .from('movimento')
         .select('*')
+        .eq('empresa_id', empresaId)
         .eq('tipo', 'entrada')
         .gte('criado_em', inicioDiaSP)
         .order('criado_em', { ascending: false })
@@ -221,6 +225,7 @@ export const CadastrarPage: React.FC = () => {
         const { data: produtosData } = await supabase
           .from('produto')
           .select('id, nome, ean, unidade')
+          .eq('empresa_id', empresaId)
           .in('id', idsProdutos);
 
         if (produtosData) {
@@ -253,7 +258,7 @@ export const CadastrarPage: React.FC = () => {
     } finally {
       setCarregandoEntradas(false);
     }
-  }, []);
+  }, [empresaId]);
 
   useEffect(() => {
     carregarCategorias();
@@ -271,11 +276,16 @@ export const CadastrarPage: React.FC = () => {
     }
 
     const timer = setTimeout(async () => {
+      if (!empresaId) {
+        setStatusBusca('ocioso');
+        return;
+      }
       setStatusBusca('buscando');
       try {
         const { data, error } = await supabase
           .from('produto')
           .select('*')
+          .eq('empresa_id', empresaId)
           .eq('ean', eanLimpo)
           .maybeSingle();
 
@@ -311,7 +321,7 @@ export const CadastrarPage: React.FC = () => {
     }, 280);
 
     return () => clearTimeout(timer);
-  }, [codigoBarras]);
+  }, [codigoBarras, empresaId]);
 
   // Criação de nova categoria rápida
   const handleCriarCategoria = async (e: React.FormEvent) => {

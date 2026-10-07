@@ -172,7 +172,8 @@ CREATE INDEX IF NOT EXISTS idx_relatorio_empresa_data ON public.relatorio(empres
 -- ==============================================================================
 
 -- 4.1 VIEW: v_estoque (Saldo atual consolidado por produto e valor de custo total)
-CREATE OR REPLACE VIEW public.v_estoque AS
+CREATE OR REPLACE VIEW public.v_estoque
+WITH (security_invoker = true) AS
 WITH saldo_movimentos AS (
     SELECT 
         m.produto_id,
@@ -199,7 +200,8 @@ LEFT JOIN saldo_movimentos sm ON sm.produto_id = p.id AND sm.empresa_id = p.empr
 COMMENT ON VIEW public.v_estoque IS 'Saldo em estoque consolidado em tempo real derivado dos movimentos';
 
 -- 4.2 VIEW: v_preco_atual (Preço em vigor considerando promoções ativas)
-CREATE OR REPLACE VIEW public.v_preco_atual AS
+CREATE OR REPLACE VIEW public.v_preco_atual
+WITH (security_invoker = true) AS
 WITH promo_ativa AS (
     SELECT DISTINCT ON (pr.produto_id, pr.empresa_id)
         pr.produto_id,
@@ -223,7 +225,8 @@ LEFT JOIN promo_ativa pa ON pa.produto_id = p.id AND pa.empresa_id = p.empresa_i
 COMMENT ON VIEW public.v_preco_atual IS 'Preço de venda atualizado com dedução de promoções ativas';
 
 -- 4.3 VIEW: v_giro (Vendas dos últimos 30 dias e média diária por produto)
-CREATE OR REPLACE VIEW public.v_giro AS
+CREATE OR REPLACE VIEW public.v_giro
+WITH (security_invoker = true) AS
 WITH vendas_30d AS (
     SELECT 
         vi.produto_id,
@@ -245,7 +248,8 @@ LEFT JOIN vendas_30d v30 ON v30.produto_id = p.id AND v30.empresa_id = p.empresa
 COMMENT ON VIEW public.v_giro IS 'Giro de vendas nos últimos 30 dias para cálculo de reposição e cobertura';
 
 -- 4.4 VIEW: v_giro_30d (Alias compatível com v_giro)
-CREATE OR REPLACE VIEW public.v_giro_30d AS
+CREATE OR REPLACE VIEW public.v_giro_30d
+WITH (security_invoker = true) AS
 SELECT * FROM public.v_giro;
 
 COMMENT ON VIEW public.v_giro_30d IS 'Alias de compatibilidade para v_giro';
@@ -260,9 +264,10 @@ RETURNS UUID
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
-AS $$
+SET search_path = ''
+AS $
     SELECT empresa_id FROM public.perfil WHERE id = auth.uid() LIMIT 1;
-$$;
+$;
 
 -- Helper para obter o papel do usuário autenticado
 CREATE OR REPLACE FUNCTION public.get_meu_papel()
@@ -270,9 +275,10 @@ RETURNS TEXT
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
-AS $$
+SET search_path = ''
+AS $
     SELECT papel FROM public.perfil WHERE id = auth.uid() LIMIT 1;
-$$;
+$;
 
 -- RPC Transacional de Fechamento de Venda
 CREATE OR REPLACE FUNCTION public.fechar_venda(
@@ -282,7 +288,7 @@ CREATE OR REPLACE FUNCTION public.fechar_venda(
 RETURNS UUID
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = ''
 AS $$
 DECLARE
     v_user_id UUID := auth.uid();
@@ -343,6 +349,18 @@ BEGIN
         v_preco := (v_item->>'preco_unit')::NUMERIC;
         v_custo := COALESCE((v_item->>'custo_unit')::NUMERIC, 0);
         v_desc_unit := COALESCE((v_item->>'desconto_unit')::NUMERIC, 0);
+
+        -- Garantir que o produto pertence à mesma empresa da sessão.
+        -- A validação dentro da RPC é obrigatória porque SECURITY DEFINER ignora RLS.
+        IF NOT EXISTS (
+            SELECT 1
+            FROM public.produto p
+            WHERE p.id = v_produto_id
+              AND p.empresa_id = v_empresa_id
+              AND p.ativo = true
+        ) THEN
+            RAISE EXCEPTION 'Produto inválido ou pertencente a outra empresa';
+        END IF;
 
         -- Inserir venda_item
         INSERT INTO public.venda_item (
@@ -474,3 +492,22 @@ CREATE POLICY "relatorio_dono_policy" ON public.relatorio
     FOR ALL TO authenticated
     USING (empresa_id = public.get_minha_empresa_id() AND public.get_meu_papel() = 'dono')
     WITH CHECK (empresa_id = public.get_minha_empresa_id() AND public.get_meu_papel() = 'dono');
+
+-- ==============================================================================
+-- 7. HARDENING DE FUNÇÕES, VIEWS E DATA API
+-- ==============================================================================
+
+-- SECURITY DEFINER em schema exposto não deve ficar executável por PUBLIC.
+REVOKE ALL ON FUNCTION public.get_minha_empresa_id() FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.get_meu_papel() FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.fechar_venda(JSONB, TEXT) FROM PUBLIC;
+
+GRANT EXECUTE ON FUNCTION public.get_minha_empresa_id() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_meu_papel() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.fechar_venda(JSONB, TEXT) TO authenticated;
+
+-- As views são security_invoker e, portanto, respeitam o contexto/RLS do chamador.
+GRANT SELECT ON public.v_estoque TO authenticated;
+GRANT SELECT ON public.v_preco_atual TO authenticated;
+GRANT SELECT ON public.v_giro TO authenticated;
+GRANT SELECT ON public.v_giro_30d TO authenticated;

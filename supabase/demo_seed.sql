@@ -157,6 +157,17 @@ BEGIN
         (v_hist_7, v_prod_tomate, 20, 7.99, 4.50, 0.00)
     ON CONFLICT (id) DO NOTHING;
 
+    INSERT INTO public.movimento (empresa_id, produto_id, tipo, quantidade, preco_unit, custo_unit, ref_id, criado_em)
+    VALUES
+        (v_empresa_id, v_prod_arroz, 'venda', 40, 29.90, 21.50, v_hist_1::TEXT, now() - INTERVAL '25 days'),
+        (v_empresa_id, v_prod_feijao, 'venda', 50, 8.79, 5.90, v_hist_2::TEXT, now() - INTERVAL '20 days'),
+        (v_empresa_id, v_prod_oleo, 'venda', 60, 6.99, 5.10, v_hist_3::TEXT, now() - INTERVAL '18 days'),
+        (v_empresa_id, v_prod_leite, 'venda', 75, 4.99, 3.80, v_hist_4::TEXT, now() - INTERVAL '15 days'),
+        (v_empresa_id, v_prod_coca, 'venda', 50, 10.49, 7.20, v_hist_5::TEXT, now() - INTERVAL '12 days'),
+        (v_empresa_id, v_prod_detergente, 'venda', 60, 2.49, 1.65, v_hist_6::TEXT, now() - INTERVAL '10 days'),
+        (v_empresa_id, v_prod_tomate, 'venda', 20, 7.99, 4.50, v_hist_7::TEXT, now() - INTERVAL '8 days')
+    ON CONFLICT DO NOTHING;
+
     -- Venda 1 (Hoje - PIX)
     INSERT INTO public.venda (id, empresa_id, operador_id, total, custo_total, desconto, forma_pagamento, taxa, criado_em)
     VALUES (v_venda_1, v_empresa_id, NULL, 48.17, 34.15, 0.00, 'pix', 0.00, now() - INTERVAL '2 hours')

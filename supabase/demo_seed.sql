@@ -146,6 +146,17 @@ BEGIN
         (v_hist_7, v_empresa_id, NULL, 159.80, 90.00, 0.00, 'pix', 0.00, now() - INTERVAL '8 days')
     ON CONFLICT (id) DO NOTHING;
 
+    INSERT INTO public.venda_item (venda_id, produto_id, quantidade, preco_unit, custo_unit, desconto_unit)
+    VALUES
+        (v_hist_1, v_prod_arroz, 40, 29.90, 21.50, 0.00),
+        (v_hist_2, v_prod_feijao, 50, 8.79, 5.90, 0.00),
+        (v_hist_3, v_prod_oleo, 60, 6.99, 5.10, 0.00),
+        (v_hist_4, v_prod_leite, 75, 4.99, 3.80, 0.00),
+        (v_hist_5, v_prod_coca, 50, 10.49, 7.20, 0.00),
+        (v_hist_6, v_prod_detergente, 60, 2.49, 1.65, 0.00),
+        (v_hist_7, v_prod_tomate, 20, 7.99, 4.50, 0.00)
+    ON CONFLICT (id) DO NOTHING;
+
     -- Venda 1 (Hoje - PIX)
     INSERT INTO public.venda (id, empresa_id, operador_id, total, custo_total, desconto, forma_pagamento, taxa, criado_em)
     VALUES (v_venda_1, v_empresa_id, NULL, 48.17, 34.15, 0.00, 'pix', 0.00, now() - INTERVAL '2 hours')

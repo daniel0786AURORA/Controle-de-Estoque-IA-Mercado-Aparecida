@@ -271,18 +271,18 @@ const SALDOS_INICIAIS: Record<string, number> = {
   prod_feijao_1kg: 55,
   prod_oleo_soya: 72,
   prod_leite_pira: 110,
-  prod_cafe_melitta: 32,
+  prod_cafe_melitta: 80,
   prod_coca_2l: 45,
-  prod_sabao_omo: 24,
+  prod_sabao_omo: 60,
   prod_detergente_ype: 85,
   prod_acucar_uniao: 42,
-  prod_mussarela_200g: 14,
-  prod_iogurte_danone: 18,
+  prod_mussarela_200g: 25,
+  prod_iogurte_danone: 30,
   prod_macarrao_barilla: 38,
   prod_biscoito_passatempo: 29,
   prod_tomate_italiano: 12.5,
   prod_banana_prata: 15.0,
-  prod_parado_palmito: 16, // Dinheiro parado: 16 unidades sem venda recente
+  prod_parado_palmito: 100, // Principal concentração de capital parado
 };
 
 // Vendas dos últimos 30 dias para cálculo de giro e ranking
@@ -291,13 +291,13 @@ const GIRO_30D_INICIAL: Record<string, { vendido_30d: number; media_dia: number 
   prod_feijao_1kg: { vendido_30d: 82, media_dia: 2.73 },
   prod_leite_pira: { vendido_30d: 165, media_dia: 5.50 },
   prod_coca_2l: { vendido_30d: 110, media_dia: 3.67 },
-  prod_cafe_melitta: { vendido_30d: 58, media_dia: 1.93 },
+  prod_cafe_melitta: { vendido_30d: 0, media_dia: 0 }, // estoque lento
   prod_oleo_soya: { vendido_30d: 75, media_dia: 2.50 },
   prod_detergente_ype: { vendido_30d: 90, media_dia: 3.00 },
-  prod_sabao_omo: { vendido_30d: 36, media_dia: 1.20 },
+  prod_sabao_omo: { vendido_30d: 0, media_dia: 0 }, // compra excessiva
   prod_acucar_uniao: { vendido_30d: 62, media_dia: 2.07 },
-  prod_mussarela_200g: { vendido_30d: 42, media_dia: 1.40 },
-  prod_iogurte_danone: { vendido_30d: 35, media_dia: 1.17 },
+  prod_mussarela_200g: { vendido_30d: 0, media_dia: 0 }, // perecível lento
+  prod_iogurte_danone: { vendido_30d: 0, media_dia: 0 }, // perecível lento
   prod_macarrao_barilla: { vendido_30d: 48, media_dia: 1.60 },
   prod_biscoito_passatempo: { vendido_30d: 52, media_dia: 1.73 },
   prod_tomate_italiano: { vendido_30d: 45, media_dia: 1.50 },
@@ -401,9 +401,10 @@ class MockDatabaseService {
   private itensVenda: any[] = [];
   private configTaxa = {
     empresa_id: EMPRESA_ID_PADRAO,
-    taxa_credito: 3.2,
-    taxa_debito: 1.4,
-    taxa_pix: 0.0,
+    dinheiro: 0.0,
+    pix: 0.0,
+    debito: 0.014,
+    credito: 0.032,
     desconto_max_operador: 5.0,
   };
 

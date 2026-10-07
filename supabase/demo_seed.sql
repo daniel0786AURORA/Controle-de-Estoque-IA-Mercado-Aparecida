@@ -43,6 +43,13 @@ DECLARE
     v_venda_1 UUID := 'd1000000-0000-0000-0000-000000000001';
     v_venda_2 UUID := 'd1000000-0000-0000-0000-000000000002';
     v_venda_3 UUID := 'd1000000-0000-0000-0000-000000000003';
+    v_hist_1 UUID := 'd2000000-0000-0000-0000-000000000001';
+    v_hist_2 UUID := 'd2000000-0000-0000-0000-000000000002';
+    v_hist_3 UUID := 'd2000000-0000-0000-0000-000000000003';
+    v_hist_4 UUID := 'd2000000-0000-0000-0000-000000000004';
+    v_hist_5 UUID := 'd2000000-0000-0000-0000-000000000005';
+    v_hist_6 UUID := 'd2000000-0000-0000-0000-000000000006';
+    v_hist_7 UUID := 'd2000000-0000-0000-0000-000000000007';
 BEGIN
 
     -- 1. EMPRESA FICTÍCIA
@@ -113,18 +120,18 @@ BEGIN
     -- 8. MOVIMENTAÇÕES DE ENTRADA (Abastecimento inicial do estoque)
     INSERT INTO public.movimento (empresa_id, produto_id, lote_id, tipo, quantidade, custo_unit, preco_unit, motivo, criado_em)
     VALUES
-        (v_empresa_id, v_prod_arroz, NULL, 'entrada', 60, 21.50, 29.90, 'Entrada NF Fornecedor Camil', now() - INTERVAL '30 days'),
-        (v_empresa_id, v_prod_feijao, NULL, 'entrada', 80, 5.90, 8.79, 'Entrada NF Fornecedor Camil', now() - INTERVAL '30 days'),
-        (v_empresa_id, v_prod_oleo, NULL, 'entrada', 90, 5.10, 6.99, 'Entrada NF Distribuidora ABC', now() - INTERVAL '30 days'),
-        (v_empresa_id, v_prod_leite, v_lote_leite, 'entrada', 150, 3.80, 4.99, 'Entrada Laticínios Piracanjuba', now() - INTERVAL '15 days'),
-        (v_empresa_id, v_prod_cafe, NULL, 'entrada', 45, 13.50, 18.90, 'Entrada NF Melitta', now() - INTERVAL '25 days'),
-        (v_empresa_id, v_prod_coca, NULL, 'entrada', 80, 7.20, 10.49, 'Entrada NF FEMSA', now() - INTERVAL '20 days'),
-        (v_empresa_id, v_prod_sabao, NULL, 'entrada', 30, 16.80, 22.90, 'Entrada Unilever', now() - INTERVAL '25 days'),
+        (v_empresa_id, v_prod_arroz, NULL, 'entrada', 90, 21.50, 29.90, 'Entrada NF Fornecedor Camil', now() - INTERVAL '30 days'),
+        (v_empresa_id, v_prod_feijao, NULL, 'entrada', 70, 5.90, 8.79, 'Entrada NF Fornecedor Camil', now() - INTERVAL '30 days'),
+        (v_empresa_id, v_prod_oleo, NULL, 'entrada', 80, 5.10, 6.99, 'Entrada NF Distribuidora ABC', now() - INTERVAL '30 days'),
+        (v_empresa_id, v_prod_leite, v_lote_leite, 'entrada', 110, 3.80, 4.99, 'Entrada Laticínios Piracanjuba', now() - INTERVAL '15 days'),
+        (v_empresa_id, v_prod_cafe, NULL, 'entrada', 80, 13.50, 18.90, 'Entrada NF Melitta', now() - INTERVAL '25 days'),
+        (v_empresa_id, v_prod_coca, NULL, 'entrada', 70, 7.20, 10.49, 'Entrada NF FEMSA', now() - INTERVAL '20 days'),
+        (v_empresa_id, v_prod_sabao, NULL, 'entrada', 60, 16.80, 22.90, 'Entrada Unilever', now() - INTERVAL '25 days'),
         (v_empresa_id, v_prod_detergente, NULL, 'entrada', 120, 1.65, 2.49, 'Entrada Química Amparo Ypê', now() - INTERVAL '25 days'),
         (v_empresa_id, v_prod_mussarela, v_lote_mussarela, 'entrada', 25, 7.50, 11.90, 'Entrada Frios', now() - INTERVAL '10 days'),
         (v_empresa_id, v_prod_iogurte, v_lote_iogurte, 'entrada', 30, 2.10, 3.49, 'Entrada Danone', now() - INTERVAL '10 days'),
-        (v_empresa_id, v_prod_palmito_parado, NULL, 'entrada', 18, 18.00, 26.90, 'Entrada Antiga (Sem giro há > 60 dias)', now() - INTERVAL '75 days'),
-        (v_empresa_id, v_prod_tomate, NULL, 'entrada', 25.0, 4.50, 7.99, 'Entrada Ceasa Hortifrúti', now() - INTERVAL '3 days')
+        (v_empresa_id, v_prod_palmito_parado, NULL, 'entrada', 100, 18.00, 26.90, 'Entrada Antiga (Sem giro há > 60 dias)', now() - INTERVAL '75 days'),
+        (v_empresa_id, v_prod_tomate, NULL, 'entrada', 40.0, 4.50, 7.99, 'Entrada Ceasa Hortifrúti', now() - INTERVAL '3 days')
     ON CONFLICT DO NOTHING;
 
     -- 9. VENDAS HISTÓRICAS E DO DIA

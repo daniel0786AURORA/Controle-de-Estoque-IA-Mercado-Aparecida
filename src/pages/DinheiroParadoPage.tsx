@@ -588,7 +588,7 @@ export const DinheiroParadoPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             {/* Controles de Desconto e Prazo */}
             <div className="space-y-6">
               <div>
@@ -814,8 +814,8 @@ export const DinheiroParadoPage: React.FC = () => {
 
   if (!ehDono) {
     return (
-      <div className="w-full max-w-7xl mx-auto p-4 sm:p-6 md:p-8 flex flex-col items-center justify-center min-h-[60vh]">
-        <div className="bg-white p-8 rounded-2xl border border-[#14211C]/15 shadow-sm text-center max-w-md">
+      <div className="w-full max-w-[1180px] mx-auto p-3 sm:p-4 md:p-5 flex flex-col items-center justify-center min-h-[60vh]">
+        <div className="bg-white p-6 rounded-2xl border border-[#14211C]/15 shadow-sm text-center max-w-md">
           <div className="w-14 h-14 bg-[#C4361A]/10 text-[#C4361A] rounded-2xl flex items-center justify-center mx-auto mb-4">
             <ShieldAlert className="w-8 h-8" />
           </div>
@@ -829,12 +829,12 @@ export const DinheiroParadoPage: React.FC = () => {
   }
 
   return (
-    <div className="w-full max-w-7xl mx-auto p-4 sm:p-6 md:p-8 space-y-6">
+    <div className="w-full max-w-[1180px] mx-auto p-3 sm:p-4 md:p-5 space-y-4 sm:space-y-5">
       
       {/* Cabeçalho */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-[#14211C] tracking-tight flex items-center gap-2.5">
+          <h1 className="text-xl sm:text-2xl font-bold text-[#14211C] tracking-tight flex items-center gap-2.5">
             <CircleDollarSign className="w-7 h-7 text-[#0E7A4F]" />
             Dinheiro Parado
           </h1>
@@ -881,7 +881,7 @@ export const DinheiroParadoPage: React.FC = () => {
             </span>
             <TrendingDown className="w-4 h-4 text-[#C4361A]" />
           </div>
-          <div className="text-2xl sm:text-3xl font-bold text-[#C4361A]">
+          <div className="text-xl sm:text-2xl font-bold text-[#C4361A]">
             {carregando ? (
               <div className="h-9 bg-[#14211C]/10 rounded w-32 animate-pulse" />
             ) : (
@@ -901,7 +901,7 @@ export const DinheiroParadoPage: React.FC = () => {
             </span>
             <PackageX className="w-4 h-4 text-[#935A12]" />
           </div>
-          <div className="text-2xl sm:text-3xl font-bold text-[#14211C]">
+          <div className="text-xl sm:text-2xl font-bold text-[#14211C]">
             {carregando ? (
               <div className="h-9 bg-[#14211C]/10 rounded w-16 animate-pulse" />
             ) : (
@@ -921,7 +921,7 @@ export const DinheiroParadoPage: React.FC = () => {
             </span>
             <Percent className="w-4 h-4 text-[#14211C]/60" />
           </div>
-          <div className="text-2xl sm:text-3xl font-bold text-[#14211C]">
+          <div className="text-xl sm:text-2xl font-bold text-[#14211C]">
             {carregando ? (
               <div className="h-9 bg-[#14211C]/10 rounded w-20 animate-pulse" />
             ) : (
@@ -941,7 +941,7 @@ export const DinheiroParadoPage: React.FC = () => {
             </span>
             <Sparkles className="w-4 h-4 text-[#0E7A4F]" />
           </div>
-          <div className="text-2xl sm:text-3xl font-bold text-[#0E7A4F]">
+          <div className="text-xl sm:text-2xl font-bold text-[#0E7A4F]">
             {carregando ? (
               <div className="h-9 bg-[#0E7A4F]/10 rounded w-32 animate-pulse" />
             ) : (

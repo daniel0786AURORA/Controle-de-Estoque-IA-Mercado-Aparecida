@@ -1,6 +1,7 @@
 import type { Perfil, Produto, Categoria, Lote, Movimento, PapelUsuario } from '../types';
 
 export const EMPRESA_ID_PADRAO = 'empresa_mercado_aparecida';
+const MOCK_DATA_VERSION = '2026-10-07-v2';
 
 export const USUARIO_TESTE_ADMIN = {
   id: 'usr_teste_admin_01',
@@ -475,6 +476,7 @@ class MockDatabaseService {
   private salvarNoLocalStorage() {
     try {
       if (typeof window !== 'undefined' && window.localStorage) {
+        localStorage.setItem('mercado_mock_version', MOCK_DATA_VERSION);
         localStorage.setItem('mercado_mock_produtos', JSON.stringify(this.produtos));
         localStorage.setItem('mercado_mock_categorias', JSON.stringify(this.categorias));
         localStorage.setItem('mercado_mock_lotes', JSON.stringify(this.lotes));
@@ -491,6 +493,13 @@ class MockDatabaseService {
   private carregarDoLocalStorage() {
     try {
       if (typeof window !== 'undefined' && window.localStorage) {
+        const versao = localStorage.getItem('mercado_mock_version');
+        if (versao !== MOCK_DATA_VERSION) {
+          // Atualiza automaticamente dados demo antigos para o cenário coerente atual.
+          this.salvarNoLocalStorage();
+          return;
+        }
+
         const prod = localStorage.getItem('mercado_mock_produtos');
         if (prod) this.produtos = JSON.parse(prod);
 

@@ -249,7 +249,7 @@ export const PainelPage: React.FC<PainelPageProps> = ({ aoNavegar }) => {
         }
 
         const cobertura = mediaDia > 0 ? (saldo / mediaDia) : Infinity;
-        const isParado = cobertura > 60 || diasSemVenda > 60 || !ultimaVenda;
+        const isParado = cobertura > 45 || diasSemVenda > 45 || !ultimaVenda;
 
         if (isParado) {
           somaDinheiroParado += valorCusto;

@@ -1,21 +1,20 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
-import { 
-  Store, 
-  LogOut, 
-  User, 
-  LayoutDashboard, 
-  ShoppingCart, 
-  PlusCircle, 
-  Boxes, 
-  Truck, 
-  CalendarClock, 
-  CircleDollarSign, 
-  Wallet, 
+import {
+  Store,
+  LogOut,
+  LayoutDashboard,
+  ShoppingCart,
+  PlusCircle,
+  Boxes,
+  Truck,
+  CalendarClock,
+  CircleDollarSign,
+  Wallet,
   BarChart3,
   ShieldCheck,
   UserCheck,
-  Settings
+  Settings,
 } from 'lucide-react';
 import type { TabRota } from '../types';
 
@@ -34,7 +33,7 @@ interface ItemAba {
 const TODAS_ABAS_DONO: ItemAba[] = [
   { id: 'painel', rotulo: 'Painel', icone: LayoutDashboard },
   { id: 'caixa', rotulo: 'Caixa', icone: ShoppingCart },
-  { id: 'cadastrar', rotulo: 'Cadastrar', icone: PlusCircle },
+  { id: 'cadastrar', rotulo: 'Cadastro', icone: PlusCircle },
   { id: 'estoque', rotulo: 'Estoque', icone: Boxes },
   { id: 'compras', rotulo: 'Compras', icone: Truck },
   { id: 'validade', rotulo: 'Validade', icone: CalendarClock },
@@ -50,91 +49,82 @@ const ABAS_OPERADOR: ItemAba[] = [
 
 export const Layout: React.FC<LayoutProps> = ({ rotaAtiva, aoMudarRota, children }) => {
   const { usuario, perfil, papel, logout, alternarPapelTeste, modoTeste } = useAuth();
-
   const abasDisponiveis = papel === 'operador' ? ABAS_OPERADOR : TODAS_ABAS_DONO;
 
   return (
-    <div className="min-h-screen bg-[#EEF1EC] text-[#14211C] flex flex-col font-sans selection:bg-[#0E7A4F]/20">
-      
-      {/* Barra Superior Escura (#14211C) */}
-      <header className="bg-[#14211C] text-white sticky top-0 z-40 shadow-md">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6">
-          
-          {/* Linha Principal: Identidade e Usuário */}
-          <div className="flex items-center justify-between h-16 border-b border-white/10 gap-2">
-            
-            {/* Logo / Nome do Mercado */}
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[#0E7A4F] text-white flex items-center justify-center flex-shrink-0">
-                <Store className="w-6 h-6" />
+    <div className="min-h-screen text-[#17231E] flex flex-col">
+      <header className="sticky top-0 z-40 border-b border-[#DDE5DF]/90 bg-white/90 backdrop-blur-xl">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="h-[68px] flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 rounded-2xl bg-[#0E7A4F] text-white flex items-center justify-center shadow-[0_8px_24px_rgba(14,122,79,0.18)] flex-shrink-0">
+                <Store className="w-5 h-5" />
               </div>
-              <div>
-                <span className="font-bold text-base sm:text-lg tracking-tight block text-white leading-tight">
+              <div className="min-w-0">
+                <div className="font-semibold text-[15px] sm:text-base tracking-[-0.02em] truncate">
                   Mercado & Estoque
-                </span>
-                <span className="text-xs text-white/60 hidden sm:inline-block">
-                  Controle de Vendas e Caixa
-                </span>
+                </div>
+                <div className="text-[11px] sm:text-xs text-[#6D7973] truncate">
+                  Gestão simples para o dia a dia
+                </div>
               </div>
             </div>
 
-            {/* Usuário, Papel e Botão Sair */}
-            <div className="flex items-center gap-2 sm:gap-3">
-              {/* Botão de alternância visível apenas no modo demonstração */}
-              {modoTeste && <button
-                id="toggle-papel-teste-btn"
-                onClick={() => alternarPapelTeste()}
-                title="Alternar entre perfil de Dono (todas as abas) e Operador (apenas Caixa)"
-                className="min-h-[40px] px-2.5 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 text-xs font-medium border border-emerald-500/30 flex items-center gap-1.5 transition-colors cursor-pointer"
-              >
-                {papel === 'dono' ? (
-                  <>
-                    <UserCheck className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">Simular Operador</span>
-                  </>
-                ) : (
-                  <>
-                    <ShieldCheck className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">Voltar para Dono</span>
-                  </>
-                )}
-              </button>}
+            <div className="flex items-center gap-2.5">
+              {modoTeste && (
+                <button
+                  id="toggle-papel-teste-btn"
+                  onClick={() => alternarPapelTeste()}
+                  title="Alternar perfil no modo demonstração"
+                  className="hidden md:flex min-h-[40px] items-center gap-2 px-3 rounded-xl border border-[#DCE6DF] bg-[#F7FAF8] text-[#355046] text-xs font-semibold hover:bg-[#EEF6F1]"
+                >
+                  {papel === 'dono' ? (
+                    <>
+                      <UserCheck className="w-4 h-4 text-[#0E7A4F]" />
+                      Simular operador
+                    </>
+                  ) : (
+                    <>
+                      <ShieldCheck className="w-4 h-4 text-[#0E7A4F]" />
+                      Voltar para dono
+                    </>
+                  )}
+                </button>
+              )}
 
-              {/* Badge de Papel e Nome */}
-              <div className="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-lg bg-white/5 border border-white/10">
-                {papel === 'dono' ? (
-                  <ShieldCheck className="w-4 h-4 text-[#0E7A4F] flex-shrink-0" />
-                ) : (
-                  <UserCheck className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                )}
-                
-                <div className="flex flex-col text-left">
-                  <span className="text-xs sm:text-sm font-semibold text-white truncate max-w-[120px] sm:max-w-[180px]">
+              <div className="hidden sm:flex items-center gap-2.5 px-3 py-2 rounded-xl border border-[#E1E7E3] bg-[#FAFBFA]">
+                <div className="w-8 h-8 rounded-full bg-[#EAF6EF] text-[#0E7A4F] flex items-center justify-center">
+                  {papel === 'dono' ? (
+                    <ShieldCheck className="w-4 h-4" />
+                  ) : (
+                    <UserCheck className="w-4 h-4" />
+                  )}
+                </div>
+                <div className="leading-tight">
+                  <div className="text-xs sm:text-sm font-semibold truncate max-w-[150px]">
                     {perfil?.nome || usuario?.email?.split('@')[0] || 'Usuário'}
-                  </span>
-                  <span className="text-[10px] sm:text-xs text-white/70 uppercase tracking-wider font-medium">
-                    {papel === 'dono' ? 'Dono' : 'Operador de Caixa'}
-                  </span>
+                  </div>
+                  <div className="text-[10px] uppercase tracking-[0.12em] text-[#849089] mt-0.5">
+                    {papel === 'dono' ? 'Dono' : 'Operador'}
+                  </div>
                 </div>
               </div>
 
-              {/* Botão de Sair com no mínimo 44px de altura para toque */}
               <button
                 id="header-logout-btn"
                 onClick={() => logout()}
                 title="Sair do sistema"
-                className="min-h-[44px] h-11 px-3 sm:px-4 rounded-lg bg-white/10 hover:bg-[#C4361A] text-white flex items-center justify-center gap-1.5 font-medium transition-colors cursor-pointer text-xs sm:text-sm border border-white/15"
+                className="h-10 px-3 sm:px-4 rounded-xl border border-[#E1E7E3] bg-white text-[#43524B] hover:bg-[#FFF4F1] hover:text-[#B83A22] hover:border-[#F2D2CB] flex items-center justify-center gap-2 text-xs sm:text-sm font-semibold"
               >
-                <LogOut className="w-4 h-4 flex-shrink-0" />
+                <LogOut className="w-4 h-4" />
                 <span className="hidden sm:inline">Sair</span>
               </button>
             </div>
           </div>
 
-          {/* Navegação em Abas */}
-          <nav 
-            className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto py-2 scrollbar-none no-scrollbar"
-            aria-label="Navegação do Sistema"
+          <nav
+            className="flex items-center gap-1 overflow-x-auto pb-3 no-scrollbar"
+            aria-label="Navegação do sistema"
           >
             {abasDisponiveis.map((aba) => {
               const estaAtiva = rotaAtiva === aba.id;
@@ -145,13 +135,12 @@ export const Layout: React.FC<LayoutProps> = ({ rotaAtiva, aoMudarRota, children
                   key={aba.id}
                   id={`nav-tab-${aba.id}`}
                   onClick={() => aoMudarRota(aba.id)}
-                  className={`min-h-[44px] h-11 px-3 sm:px-4 rounded-lg text-xs sm:text-sm font-medium flex items-center gap-2 whitespace-nowrap transition-all cursor-pointer flex-shrink-0 ${
-                    estaAtiva
-                      ? 'bg-[#0E7A4F] text-white shadow-sm font-semibold'
-                      : 'text-white/80 hover:text-white hover:bg-white/10'
+                  className={`h-10 px-3.5 rounded-xl text-xs sm:text-sm font-medium flex items-center gap-2 whitespace-nowrap flex-shrink-0 border ${estaAtiva
+                    ? 'bg-[#102A20] text-white border-[#102A20] shadow-[0_6px_18px_rgba(16,42,32,0.12)]'
+                    : 'bg-transparent text-[#617069] border-transparent hover:bg-[#F2F6F3] hover:text-[#21352C]'
                   }`}
                 >
-                  <Icone className={`w-4 h-4 flex-shrink-0 ${estaAtiva ? 'text-white' : 'text-white/70'}`} />
+                  <Icone className={`w-4 h-4 flex-shrink-0 ${estaAtiva ? 'text-[#8BE0B8]' : 'text-[#819087]'}`} />
                   <span>{aba.rotulo}</span>
                 </button>
               );
@@ -160,8 +149,7 @@ export const Layout: React.FC<LayoutProps> = ({ rotaAtiva, aoMudarRota, children
         </div>
       </header>
 
-      {/* Conteúdo Principal */}
-      <main className="flex-1 w-full bg-[#EEF1EC]">
+      <main className="app-surface flex-1 w-full">
         {children}
       </main>
     </div>

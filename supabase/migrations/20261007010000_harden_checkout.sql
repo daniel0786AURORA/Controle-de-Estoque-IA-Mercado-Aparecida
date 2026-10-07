@@ -198,7 +198,7 @@ BEGIN
         IF v_papel = 'operador' AND v_desconto_manual_pct > v_limite_operador THEN
             IF p_autorizador_id IS NULL THEN
                 RAISE EXCEPTION
-                    'Desconto de % excede o limite do operador de %% e exige autorização',
+                    'Desconto de % %% excede o limite do operador de % %% e exige autorização',
                     ROUND(v_desconto_manual_pct, 2), v_limite_operador;
             END IF;
 

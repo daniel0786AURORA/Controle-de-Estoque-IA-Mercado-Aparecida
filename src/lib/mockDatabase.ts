@@ -543,13 +543,30 @@ class MockDatabaseService {
   }
 
   public getPrecoAtualView(empresaId?: string) {
-    return this.produtos.map((p) => ({
-      produto_id: p.id,
-      empresa_id: p.empresa_id,
-      preco_cheio: p.preco,
-      desconto_pct: 0,
-      preco_venda: p.preco,
-    }));
+    const hoje = new Date().toISOString().split('T')[0];
+
+    return this.produtos.map((p) => {
+      const promo = this.promocoes
+        .filter((pr) =>
+          pr.produto_id === p.id &&
+          pr.empresa_id === p.empresa_id &&
+          pr.ativa &&
+          pr.inicio <= hoje &&
+          pr.fim >= hoje
+        )
+        .sort((a, b) => Number(b.percentual) - Number(a.percentual))[0];
+
+      const descontoPct = Number(promo?.percentual || 0);
+      const precoVenda = Number((p.preco * (1 - descontoPct / 100)).toFixed(2));
+
+      return {
+        produto_id: p.id,
+        empresa_id: p.empresa_id,
+        preco_cheio: p.preco,
+        desconto_pct: descontoPct,
+        preco_venda: precoVenda,
+      };
+    });
   }
 
   public getGiro30dView(empresaId?: string) {
@@ -618,6 +635,47 @@ class MockDatabaseService {
     });
 
     return movimentos;
+  }
+
+  public getPromocoes(empresaId?: string) {
+    return this.promocoes.filter((p) => !empresaId || p.empresa_id === empresaId);
+  }
+
+  public getRelatorios(empresaId?: string) {
+    return this.relatorios.filter((r) => !empresaId || r.empresa_id === empresaId);
+  }
+
+  public adicionarPromocao(payload: any) {
+    const nova = {
+      id: payload.id || `promo_${Date.now()}`,
+      criado_em: new Date().toISOString(),
+      ativa: true,
+      ...payload,
+    };
+    this.promocoes.unshift(nova);
+    this.salvarNoLocalStorage();
+    return nova;
+  }
+
+  public atualizarPromocao(id: string, updates: any) {
+    const idx = this.promocoes.findIndex((p) => p.id === id);
+    if (idx >= 0) {
+      this.promocoes[idx] = { ...this.promocoes[idx], ...updates };
+      this.salvarNoLocalStorage();
+      return this.promocoes[idx];
+    }
+    return null;
+  }
+
+  public adicionarRelatorio(payload: any) {
+    const novo = {
+      id: payload.id || `relatorio_${Date.now()}`,
+      criado_em: new Date().toISOString(),
+      ...payload,
+    };
+    this.relatorios.unshift(novo);
+    this.salvarNoLocalStorage();
+    return novo;
   }
 
   public getConfigTaxa(empresaId?: string) {

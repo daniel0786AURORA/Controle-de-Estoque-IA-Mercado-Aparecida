@@ -121,6 +121,7 @@ export const CaixaPage: React.FC = () => {
         .from('produto')
         .select('id, empresa_id, ean, nome, unidade, custo, preco')
         .or(`nome.ilike.%${termo}%,ean.ilike.%${termo}%`)
+        .eq('empresa_id', empresaId)
         .eq('ativo', true)
         .limit(7);
 
@@ -410,22 +411,17 @@ export const CaixaPage: React.FC = () => {
         return;
       }
       
-      // Resgatar o ID da venda gerada
-      let vendaId = data;
+      // A RPC precisa retornar inequivocamente o ID da venda criada.
+      // Buscar "a última venda do operador" é inseguro em cenários concorrentes e pode
+      // aplicar desconto/metadados na venda errada.
+      const vendaId = data;
       if (!vendaId || typeof vendaId !== 'string' || vendaId.length < 10) {
-         // Fallback se a RPC não retornar o UUID
-         const { data: vendasRecentes } = await supabase.from('venda')
-           .select('id')
-           .eq('empresa_id', empresaId)
-           .eq('operador_id', usuario?.id)
-           .order('criado_em', { ascending: false })
-           .limit(1);
-         if (vendasRecentes && vendasRecentes.length > 0) {
-           vendaId = vendasRecentes[0].id;
-         }
+        setMensagemErroVenda('A venda foi processada, mas o servidor não retornou um identificador confiável. Não foram aplicadas alterações adicionais. Contate o administrador.');
+        console.error('RPC fechar_venda não retornou UUID confiável:', data);
+        return;
       }
 
-      // PASSO 5: Updates diretos
+      // PASSO 5: Updates diretos (temporário até todos os metadados entrarem na transação da RPC)
       if (vendaId) {
          // a) Update na tabela venda (se houve desconto manual)
          if (descontoManualTotal > 0 && usuario) {
@@ -571,9 +567,13 @@ export const CaixaPage: React.FC = () => {
              return;
           }
           const autorizadorId = data.user.id;
-          const { data: perfilDono } = await supabase.from('perfil').select('papel').eq('id', autorizadorId).single();
-          if (perfilDono?.papel !== 'dono') {
-             setAuthError('O usuário informado não tem permissão de dono.');
+          const { data: perfilDono } = await supabase
+            .from('perfil')
+            .select('papel, empresa_id')
+            .eq('id', autorizadorId)
+            .single();
+          if (perfilDono?.papel !== 'dono' || perfilDono?.empresa_id !== empresaId) {
+             setAuthError('O usuário informado não é um dono autorizado desta empresa.');
              setValidandoAuth(false);
              return;
           }

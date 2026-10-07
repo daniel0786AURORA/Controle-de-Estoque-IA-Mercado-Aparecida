@@ -158,6 +158,7 @@ export const ComprasPage: React.FC = () => {
       let queryProdutos = supabase
         .from('produto')
         .select('id, empresa_id, ean, nome, categoria_id, unidade, custo, preco, ativo, estoque_minimo')
+        .eq('empresa_id', empresaId)
         .eq('ativo', true);
 
       if (empresaId) {
@@ -167,11 +168,13 @@ export const ComprasPage: React.FC = () => {
       // 2. Consulta giro (v_giro) e estoque (v_estoque)
       let queryGiro = supabase
         .from('v_giro')
-        .select('produto_id, empresa_id, vendido_30d, media_dia');
+        .select('produto_id, empresa_id, vendido_30d, media_dia')
+        .eq('empresa_id', empresaId);
 
       let queryEstoque = supabase
         .from('v_estoque')
-        .select('produto_id, empresa_id, saldo, valor_custo');
+        .select('produto_id, empresa_id, saldo, valor_custo')
+        .eq('empresa_id', empresaId);
 
       if (empresaId) {
         queryGiro = queryGiro.eq('empresa_id', empresaId);
@@ -367,6 +370,7 @@ export const ComprasPage: React.FC = () => {
         let query = supabase
           .from('produto')
           .select('id, empresa_id, ean, nome, unidade, custo, preco, estoque_minimo')
+          .eq('empresa_id', empresaId)
           .or(`nome.ilike.%${termo}%,ean.ilike.%${termo}%`)
           .eq('ativo', true)
           .limit(8);
@@ -386,8 +390,8 @@ export const ComprasPage: React.FC = () => {
 
         const pIds = prods.map((p) => p.id);
         const [resEstoque, resGiro] = await Promise.all([
-          supabase.from('v_estoque').select('produto_id, saldo').in('produto_id', pIds),
-          supabase.from('v_giro').select('produto_id, media_dia, vendido_30d').in('produto_id', pIds),
+          supabase.from('v_estoque').select('produto_id, saldo').eq('empresa_id', empresaId).in('produto_id', pIds),
+          supabase.from('v_giro').select('produto_id, media_dia, vendido_30d').eq('empresa_id', empresaId).in('produto_id', pIds),
         ]);
 
         const estMap = new Map<string, number>();

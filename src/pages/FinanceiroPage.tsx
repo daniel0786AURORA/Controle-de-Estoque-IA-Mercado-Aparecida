@@ -81,6 +81,28 @@ class FinanceiroErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorB
   }
 }
 
+const formatarFormaPagamento = (forma: string) => {
+  const normalizada = String(forma || '').trim().toLowerCase();
+  const labels: Record<string, string> = {
+    pix: 'Pix',
+    fotos: 'Pix',
+    dinheiro: 'Dinheiro',
+    credito: 'Crédito',
+    crédito: 'Crédito',
+    debito: 'Débito',
+    débito: 'Débito',
+  };
+  return labels[normalizada] || (forma || 'Outro');
+};
+
+const formatarMotivoDesconto = (motivo: string) => {
+  const normalizado = String(motivo || '').trim().toLowerCase();
+  if (['arredondamento', 'arredondão', 'arredondao'].includes(normalizado)) {
+    return 'Ajuste de centavos';
+  }
+  return motivo || 'Não informado';
+};
+
 export const FinanceiroPage: React.FC = () => {
   const { papel, empresaId } = useAuth();
   const ehDono = papel === 'dono';
@@ -622,7 +644,7 @@ export const FinanceiroPage: React.FC = () => {
               breakdownPagamentos.map(item => (
                 <div key={item.forma}>
                   <div className="flex justify-between text-sm font-semibold text-[#14211C] mb-1">
-                    <span className="capitalize">{item.forma}</span>
+                    <span>{formatarFormaPagamento(item.forma)}</span>
                     <span>{formatarMoeda(item.total)} ({item.perc.toFixed(1)}%)</span>
                   </div>
                   <div className="w-full bg-[#EEF1EC] rounded-full h-2.5 mb-1 overflow-hidden">
@@ -856,7 +878,7 @@ export const FinanceiroPage: React.FC = () => {
                     <tbody className="divide-y divide-gray-100">
                        {descontos.motivosPromo.map((m, i) => (
                           <tr key={i} className="hover:bg-gray-50">
-                             <td className="p-2 font-medium">{m.motivo}</td>
+                             <td className="p-2 font-medium">{formatarMotivoDesconto(m.motivo)}</td>
                              <td className="p-2 text-right">{m.qtdVendas}</td>
                              <td className="p-2 text-right text-[#0E7A4F] font-bold">{formatarMoeda(m.valor)}</td>
                              <td className="p-2 text-right font-medium">{m.perc.toFixed(1)}%</td>

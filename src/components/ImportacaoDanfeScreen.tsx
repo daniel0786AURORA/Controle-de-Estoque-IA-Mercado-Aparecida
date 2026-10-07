@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Camera, Upload as UploadFile, ArrowLeft, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
+import { Upload as UploadFile, ArrowLeft, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 
 interface ImportacaoDanfeProps {
   onVoltarCadastro: () => void;

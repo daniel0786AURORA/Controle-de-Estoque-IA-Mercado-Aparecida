@@ -14,7 +14,8 @@ import {
   Wallet, 
   BarChart3,
   ShieldCheck,
-  UserCheck
+  UserCheck,
+  Settings
 } from 'lucide-react';
 import type { TabRota } from '../types';
 
@@ -40,6 +41,7 @@ const TODAS_ABAS_DONO: ItemAba[] = [
   { id: 'dinheiro-parado', rotulo: 'Dinheiro parado', icone: CircleDollarSign },
   { id: 'financeiro', rotulo: 'Financeiro', icone: Wallet },
   { id: 'relatorios', rotulo: 'Relatórios', icone: BarChart3 },
+  { id: 'configuracoes', rotulo: 'Configurações', icone: Settings },
 ];
 
 const ABAS_OPERADOR: ItemAba[] = [

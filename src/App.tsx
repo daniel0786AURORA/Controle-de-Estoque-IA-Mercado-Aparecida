@@ -12,6 +12,7 @@ import { ValidadePage } from './pages/ValidadePage';
 import { DinheiroParadoPage } from './pages/DinheiroParadoPage';
 import { FinanceiroPage } from './pages/FinanceiroPage';
 import { RelatoriosPage } from './pages/RelatoriosPage';
+import { ConfiguracoesPage } from './pages/ConfiguracoesPage';
 import type { TabRota } from './types';
 
 // Mapeamento de rotas e caminhos
@@ -24,11 +25,16 @@ const ROTAS_VALIDAS: Record<string, TabRota> = {
   '/compras': 'compras',
   '/validade': 'validade',
   '/dinheiro-parado': 'dinheiro-parado',
+  '/parados': 'dinheiro-parado',
   '/financeiro': 'financeiro',
   '/relatorios': 'relatorios',
+  '/configuracoes': 'configuracoes',
 };
 
 const obterCaminhoPorRota = (rota: TabRota): string => {
+  if (rota === 'dinheiro-parado') {
+    return '/parados';
+  }
   return `/${rota}`;
 };
 
@@ -149,7 +155,7 @@ const ConteudoPrincipal: React.FC = () => {
   const renderizarPagina = () => {
     switch (rotaAtiva) {
       case 'painel':
-        return <PainelPage />;
+        return <PainelPage aoNavegar={irParaRota} />;
       case 'caixa':
         return <CaixaPage />;
       case 'cadastrar':
@@ -166,6 +172,8 @@ const ConteudoPrincipal: React.FC = () => {
         return <FinanceiroPage />;
       case 'relatorios':
         return <RelatoriosPage />;
+      case 'configuracoes':
+        return <ConfiguracoesPage />;
       default:
         return <PainelPage />;
     }

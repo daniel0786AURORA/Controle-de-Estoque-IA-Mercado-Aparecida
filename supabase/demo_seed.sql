@@ -137,7 +137,7 @@ BEGIN
     -- 9. VENDAS HISTÓRICAS E DO DIA
     -- Venda 1 (Hoje - PIX)
     INSERT INTO public.venda (id, empresa_id, operador_id, total, custo_total, desconto, forma_pagamento, taxa, criado_em)
-    VALUES (v_venda_1, v_empresa_id, NULL, 47.38, 33.30, 0.00, 'pix', 0.00, now() - INTERVAL '2 hours')
+    VALUES (v_venda_1, v_empresa_id, NULL, 48.17, 34.15, 0.00, 'pix', 0.00, now() - INTERVAL '2 hours')
     ON CONFLICT (id) DO NOTHING;
 
     INSERT INTO public.venda_item (venda_id, produto_id, quantidade, preco_unit, custo_unit, desconto_unit)
@@ -158,7 +158,7 @@ BEGIN
 
     -- Venda 2 (Hoje - Cartão Crédito)
     INSERT INTO public.venda (id, empresa_id, operador_id, total, custo_total, desconto, forma_pagamento, taxa, criado_em)
-    VALUES (v_venda_2, v_empresa_id, NULL, 44.28, 31.50, 0.00, 'credito', 1.42, now() - INTERVAL '1 hour')
+    VALUES (v_venda_2, v_empresa_id, NULL, 43.88, 31.20, 0.00, 'credito', 1.40, now() - INTERVAL '1 hour')
     ON CONFLICT (id) DO NOTHING;
 
     INSERT INTO public.venda_item (venda_id, produto_id, quantidade, preco_unit, custo_unit, desconto_unit)
@@ -175,17 +175,17 @@ BEGIN
 
     -- Venda 3 (Hoje - Dinheiro com Desconto de Operador)
     INSERT INTO public.venda (id, empresa_id, operador_id, total, custo_total, desconto, desconto_motivo, forma_pagamento, taxa, criado_em)
-    VALUES (v_venda_3, v_empresa_id, NULL, 14.00, 9.60, 0.97, 'Arredondamento centavos', 'dinheiro', 0.00, now() - INTERVAL '30 minutes')
+    VALUES (v_venda_3, v_empresa_id, NULL, 14.01, 11.40, 0.96, 'Arredondamento', 'dinheiro', 0.00, now() - INTERVAL '30 minutes')
     ON CONFLICT (id) DO NOTHING;
 
     INSERT INTO public.venda_item (venda_id, produto_id, quantidade, preco_unit, custo_unit, desconto_unit)
     VALUES
-        (v_venda_3, v_prod_leite, 3, 4.99, 3.80, 0.32)
+        (v_venda_3, v_prod_leite, 3, 4.67, 3.80, 0.32)
     ON CONFLICT (id) DO NOTHING;
 
     INSERT INTO public.movimento (empresa_id, produto_id, tipo, quantidade, preco_unit, custo_unit, ref_id, criado_em)
     VALUES
-        (v_empresa_id, v_prod_leite, 'venda', 3, 4.99, 3.80, v_venda_3::TEXT, now() - INTERVAL '30 minutes')
+        (v_empresa_id, v_prod_leite, 'venda', 3, 4.67, 3.80, v_venda_3::TEXT, now() - INTERVAL '30 minutes')
     ON CONFLICT DO NOTHING;
 
     -- 10. REGISTRO DE PERDA (Para tela Financeiro demonstrar controle de quebras)
@@ -200,8 +200,8 @@ BEGIN
         'diario',
         CURRENT_DATE,
         CURRENT_DATE,
-        'Resumo diário consolidado da operação: Vendas estáveis no PDV com destaque para mercearia e bebidas. Controle de validade acionado para laticínios.',
-        '{"faturamento_total": 105.66, "lucro_bruto": 31.26, "vendas_qtd": 3, "ticket_medio": 35.22}'::jsonb,
+        'Resumo diário: vendas distribuídas entre PIX, crédito e dinheiro, com atenção para estoque parado e reposição.',
+        '{"faturamento_total":106.06,"custo_total":76.75,"taxas":1.40,"perdas":7.60,"lucro_bruto":20.31,"vendas_qtd":3,"ticket_medio":35.35}'::jsonb,
         now()
     )
     ON CONFLICT DO NOTHING;

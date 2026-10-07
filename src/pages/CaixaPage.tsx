@@ -929,7 +929,7 @@ export const CaixaPage: React.FC = () => {
                 className="w-full bg-[#EEF1EC]/50 border border-[#14211C]/20 rounded-xl px-4 py-3 text-base font-medium text-[#14211C] outline-none focus:border-[#0E7A4F] focus:ring-1 focus:ring-[#0E7A4F] transition-all"
               >
                 <option value="">Selecione um motivo...</option>
-                <option value="Arredondamento">Arredondamento</option>
+                <option value="Ajuste de centavos">Ajuste de centavos</option>
                 <option value="Cliente fiel">Cliente fiel</option>
                 <option value="Produto com avaria">Produto com avaria</option>
                 <option value="Outro">Outro</option>

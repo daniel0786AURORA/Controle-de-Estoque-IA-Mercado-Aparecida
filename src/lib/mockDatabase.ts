@@ -357,6 +357,8 @@ const VENDAS_HOJE_INICIAIS = [
     empresa_id: EMPRESA_ID_PADRAO,
     operador_id: USUARIO_TESTE_ADMIN.id,
     total: 87.50,
+    custo_total: 61.00,
+    taxa: 0,
     desconto: 0,
     forma_pagamento: 'pix',
     criado_em: new Date(inicioDia.getTime() + 1800000).toISOString(),
@@ -366,6 +368,8 @@ const VENDAS_HOJE_INICIAIS = [
     empresa_id: EMPRESA_ID_PADRAO,
     operador_id: USUARIO_TESTE_ADMIN.id,
     total: 142.30,
+    custo_total: 95.00,
+    taxa: 4.55,
     desconto: 5.0,
     desconto_motivo: 'Cliente Fidelidade',
     forma_pagamento: 'credito',
@@ -376,6 +380,8 @@ const VENDAS_HOJE_INICIAIS = [
     empresa_id: EMPRESA_ID_PADRAO,
     operador_id: USUARIO_TESTE_ADMIN.id,
     total: 34.90,
+    custo_total: 22.00,
+    taxa: 0,
     desconto: 0,
     forma_pagamento: 'dinheiro',
     criado_em: new Date(inicioDia.getTime() + 9000000).toISOString(),
@@ -385,6 +391,8 @@ const VENDAS_HOJE_INICIAIS = [
     empresa_id: EMPRESA_ID_PADRAO,
     operador_id: USUARIO_TESTE_ADMIN.id,
     total: 62.40,
+    custo_total: 42.00,
+    taxa: 0.87,
     desconto: 0,
     forma_pagamento: 'debito',
     criado_em: new Date(inicioDia.getTime() + 12000000).toISOString(),
@@ -517,23 +525,39 @@ class MockDatabaseService {
   }
 
   public getMovimentosVenda(empresaId?: string) {
-    return this.produtos.map((p, idx) => {
-      // Para o produto parado, sem data recente
-      if (p.id === 'prod_parado_palmito') {
-        return {
-          id: `mov_p_${idx}`,
-          produto_id: p.id,
-          tipo: 'venda',
-          criado_em: new Date(Date.now() - 75 * 86400000).toISOString(),
-        };
-      }
-      return {
-        id: `mov_${idx}`,
-        produto_id: p.id,
-        tipo: 'venda',
-        criado_em: new Date(Date.now() - (idx % 5) * 86400000).toISOString(),
-      };
+    const lentos = new Set([
+      'prod_cafe_melitta',
+      'prod_sabao_omo',
+      'prod_mussarela_200g',
+      'prod_iogurte_danone',
+      'prod_parado_palmito',
+    ]);
+
+    const movimentos = this.produtos.map((p, idx) => ({
+      id: `mov_${idx}`,
+      empresa_id: p.empresa_id,
+      produto_id: p.id,
+      tipo: 'venda',
+      quantidade: 1,
+      custo_unit: p.custo,
+      criado_em: new Date(
+        Date.now() - (lentos.has(p.id) ? 75 : (idx % 5)) * 86400000
+      ).toISOString(),
+      produto: { nome: p.nome },
+    }));
+
+    movimentos.push({
+      id: 'mov_perda_demo_01',
+      empresa_id: EMPRESA_ID_PADRAO,
+      produto_id: 'prod_leite_pira',
+      tipo: 'perda',
+      quantidade: 2,
+      custo_unit: 3.8,
+      criado_em: new Date(Date.now() - 2 * 86400000).toISOString(),
+      produto: { nome: 'Leite Integral Piracanjuba 1L' },
     });
+
+    return movimentos;
   }
 
   public getConfigTaxa(empresaId?: string) {

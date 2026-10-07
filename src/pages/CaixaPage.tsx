@@ -61,6 +61,7 @@ export const CaixaPage: React.FC = () => {
   const [painelDescontoAberto, setPainelDescontoAberto] = useState(false);
   const [descontoAplicadoValor, setDescontoAplicadoValor] = useState(0);
   const [descontoAplicadoPor, setDescontoAplicadoPor] = useState<string | null>(null);
+  const [descontoAutorizacaoToken, setDescontoAutorizacaoToken] = useState<string | null>(null);
   const [descontoMotivo, setDescontoMotivo] = useState('');
   
   const [valorACobrarInput, setValorACobrarInput] = useState('');
@@ -286,6 +287,7 @@ export const CaixaPage: React.FC = () => {
     setModalCancelamento(false);
     setDescontoAplicadoValor(0);
     setDescontoAplicadoPor(null);
+    setDescontoAutorizacaoToken(null);
     setDescontoMotivo('');
     manterFoco();
   };
@@ -376,6 +378,7 @@ export const CaixaPage: React.FC = () => {
         p_forma: forma,
         p_desconto_motivo: descontoManualTotal > 0 ? descontoMotivo : null,
         p_autorizador_id: descontoManualTotal > 0 ? descontoAplicadoPor : null,
+        p_autorizacao_token: descontoManualTotal > 0 ? descontoAutorizacaoToken : null,
       });
 
       if (error) {
@@ -398,6 +401,7 @@ export const CaixaPage: React.FC = () => {
       setSugestoes([]);
       setDescontoAplicadoValor(0);
       setDescontoAplicadoPor(null);
+      setDescontoAutorizacaoToken(null);
       setDescontoMotivo('');
       setPainelDescontoAberto(false);
       
@@ -497,17 +501,28 @@ export const CaixaPage: React.FC = () => {
              return;
           }
           const autorizadorId = data.user.id;
-          const { data: perfilDono } = await supabase
-            .from('perfil')
-            .select('papel, empresa_id')
-            .eq('id', autorizadorId)
-            .single();
-          if (perfilDono?.papel !== 'dono' || perfilDono?.empresa_id !== empresaId) {
-             setAuthError('O usuário informado não é um dono autorizado desta empresa.');
-             setValidandoAuth(false);
-             return;
+          const approvalRes = await fetch(
+            `${(import.meta as any).env.VITE_SUPABASE_URL}/rest/v1/rpc/criar_autorizacao_caixa`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'apikey': (import.meta as any).env.VITE_SUPABASE_ANON_KEY,
+                'Authorization': `Bearer ${data.access_token}`,
+              },
+              body: '{}',
+            }
+          );
+
+          const approvalToken = await approvalRes.json();
+          if (!approvalRes.ok || typeof approvalToken !== 'string') {
+            setAuthError('O usuário informado não possui permissão de dono para autorizar este desconto.');
+            setValidandoAuth(false);
+            return;
           }
+
           setDescontoAplicadoPor(autorizadorId);
+          setDescontoAutorizacaoToken(approvalToken);
        } catch (err) {
           setAuthError('Erro ao validar autorização.');
           setValidandoAuth(false);
@@ -728,7 +743,7 @@ export const CaixaPage: React.FC = () => {
               </button>
             )}
             {descontoAplicadoValor > 0 && (
-              <button onClick={() => { setDescontoAplicadoValor(0); setDescontoAplicadoPor(null); setDescontoMotivo(''); }} className="text-sm font-bold text-[#C4361A] hover:text-[#9c2b15] mt-2 transition-colors">
+              <button onClick={() => { setDescontoAplicadoValor(0); setDescontoAplicadoPor(null); setDescontoAutorizacaoToken(null); setDescontoMotivo(''); }} className="text-sm font-bold text-[#C4361A] hover:text-[#9c2b15] mt-2 transition-colors">
                  Remover Desconto
               </button>
             )}

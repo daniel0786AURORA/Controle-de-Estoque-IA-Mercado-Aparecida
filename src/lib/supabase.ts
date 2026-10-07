@@ -45,8 +45,12 @@ const realSupabase = createClient(
   }
 );
 
-// Flag para alternar modo offline/mock se falhar a rede
-let fallbackToMock = true; // Ativado para garantir teste imediato sem bloqueio de rede
+// Usa mock automaticamente apenas quando não há configuração real de Supabase.
+const temSupabaseReal = Boolean(
+  (import.meta as any).env.VITE_SUPABASE_URL &&
+  (import.meta as any).env.VITE_SUPABASE_ANON_KEY
+);
+let fallbackToMock = !temSupabaseReal;
 
 export function setModoMock(ativo: boolean) {
   fallbackToMock = ativo;
@@ -248,6 +252,7 @@ class MockQueryBuilder {
       case 'v_preco_atual':
         dataset = mockDatabase.getPrecoAtualView();
         break;
+      case 'v_giro':
       case 'v_giro_30d':
         dataset = mockDatabase.getGiro30dView();
         break;
@@ -263,6 +268,12 @@ class MockQueryBuilder {
         break;
       case 'config_taxa':
         dataset = [mockDatabase.getConfigTaxa()];
+        break;
+      case 'promocao':
+        dataset = mockDatabase.getPromocoes();
+        break;
+      case 'relatorio':
+        dataset = mockDatabase.getRelatorios();
         break;
       case 'perfil':
         dataset = [PERFIL_TESTE_ADMIN, PERFIL_TESTE_OPERADOR];
@@ -293,6 +304,10 @@ class MockQueryBuilder {
         }
       } else if (this.tabela === 'venda') {
         resultadoGravado = { id: `venda_${Date.now()}`, criado_em: new Date().toISOString(), ...payload };
+      } else if (this.tabela === 'promocao') {
+        resultadoGravado = mockDatabase.adicionarPromocao(payload);
+      } else if (this.tabela === 'relatorio') {
+        resultadoGravado = mockDatabase.adicionarRelatorio(payload);
       } else {
         resultadoGravado = { id: `item_${Date.now()}`, ...payload };
       }
@@ -318,6 +333,10 @@ class MockQueryBuilder {
         });
       } else if (this.tabela === 'config_taxa') {
         mockDatabase.atualizarConfigTaxa(payload);
+      } else if (this.tabela === 'promocao') {
+        dataset.filter((item) => this.filtros.every((f) => f(item))).forEach((p) => {
+          mockDatabase.atualizarPromocao(p.id, payload);
+        });
       }
       return { data: payload, error: null };
     }

@@ -1,0 +1,1 @@
+CREATE INDEX IF NOT EXISTS idx_movimento_produto_id ON public.movimento(produto_id);

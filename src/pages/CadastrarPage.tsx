@@ -167,10 +167,12 @@ export const CadastrarPage: React.FC = () => {
 
   // Carrega categorias do banco
   const carregarCategorias = useCallback(async () => {
+    if (!empresaId) return;
     try {
       const { data, error } = await supabase
         .from('categoria')
         .select('*')
+        .eq('empresa_id', empresaId)
         .order('nome', { ascending: true });
 
       if (error) {
@@ -184,10 +186,11 @@ export const CadastrarPage: React.FC = () => {
     } catch (err) {
       console.error('Exceção ao buscar categorias:', err);
     }
-  }, []);
+  }, [empresaId]);
 
   // Carrega as últimas 10 entradas do dia atual
   const carregarUltimasEntradas = useCallback(async () => {
+    if (!empresaId) return;
     try {
       setCarregandoEntradas(true);
       const inicioDiaSP = obterInicioDoDiaSP();
@@ -196,6 +199,7 @@ export const CadastrarPage: React.FC = () => {
       const { data: movimentosData, error } = await supabase
         .from('movimento')
         .select('*')
+        .eq('empresa_id', empresaId)
         .eq('tipo', 'entrada')
         .gte('criado_em', inicioDiaSP)
         .order('criado_em', { ascending: false })
@@ -221,6 +225,7 @@ export const CadastrarPage: React.FC = () => {
         const { data: produtosData } = await supabase
           .from('produto')
           .select('id, nome, ean, unidade')
+          .eq('empresa_id', empresaId)
           .in('id', idsProdutos);
 
         if (produtosData) {
@@ -253,7 +258,7 @@ export const CadastrarPage: React.FC = () => {
     } finally {
       setCarregandoEntradas(false);
     }
-  }, []);
+  }, [empresaId]);
 
   useEffect(() => {
     carregarCategorias();
@@ -271,11 +276,16 @@ export const CadastrarPage: React.FC = () => {
     }
 
     const timer = setTimeout(async () => {
+      if (!empresaId) {
+        setStatusBusca('ocioso');
+        return;
+      }
       setStatusBusca('buscando');
       try {
         const { data, error } = await supabase
           .from('produto')
           .select('*')
+          .eq('empresa_id', empresaId)
           .eq('ean', eanLimpo)
           .maybeSingle();
 
@@ -311,7 +321,7 @@ export const CadastrarPage: React.FC = () => {
     }, 280);
 
     return () => clearTimeout(timer);
-  }, [codigoBarras]);
+  }, [codigoBarras, empresaId]);
 
   // Criação de nova categoria rápida
   const handleCriarCategoria = async (e: React.FormEvent) => {
@@ -434,129 +444,34 @@ export const CadastrarPage: React.FC = () => {
         return;
       }
 
-      // 1. Cria ou atualiza o registro na tabela `produto`
-      let produtoIdFinal = produtoExistente?.id || '';
+      // Produto, lote e movimento são gravados juntos no banco.
+      // Se qualquer etapa falhar, a transação inteira é revertida.
+      const { data: produtoIdFinal, error: erroEntrada } = await supabase.rpc('registrar_entrada_produto', {
+        p_produto_id: produtoExistente?.id || null,
+        p_ean: codigoBarras.trim() || null,
+        p_nome: nome.trim(),
+        p_categoria_id: categoriaId || null,
+        p_unidade: unidade.toLowerCase() === 'kg' ? 'kg' : 'un',
+        p_custo: numPrecoCompra,
+        p_preco: numPrecoVenda,
+        p_perecivel: isPerecivel,
+        p_meta_cobertura_dias: parseInt(diasCobertura, 10) || 21,
+        p_quantidade: numQuantidadeFinal,
+        p_validade: validade || null,
+      });
 
-      const dadosProduto: {
-        empresa_id: string;
-        ean: string | null;
-        nome: string;
-        categoria_id: string | null;
-        unidade: 'un' | 'kg';
-        custo: number;
-        preco: number;
-        perecivel: boolean;
-        estoque_minimo: number;
-        ativo: boolean;
-      } = {
-        empresa_id: empresaIdAtivo,
-        ean: codigoBarras.trim() || null,
-        nome: nome.trim(),
-        categoria_id: categoriaId || null,
-        unidade: (unidade.toLowerCase() === 'kg' ? 'kg' : 'un'),
-        custo: numPrecoCompra,
-        preco: numPrecoVenda,
-        perecivel: isPerecivel,
-        estoque_minimo: parseInt(diasCobertura, 10) || 21,
-        ativo: true,
-      };
-
-      console.log('Objeto a ser inserido/atualizado em produto:', dadosProduto);
-
-      if (produtoExistente?.id) {
-        const { error: erroUpdate } = await supabase
-          .from('produto')
-          .update(dadosProduto)
-          .eq('id', produtoExistente.id);
-
-        if (erroUpdate) {
-          console.error('Erro ao atualizar produto:', erroUpdate);
-          setErroDetalhado(extrairErroSupabase(erroUpdate, 'Falha ao atualizar dados do produto.'));
-          setSalvando(false);
-          return;
-        }
-        produtoIdFinal = produtoExistente.id;
-      } else {
-        const { data: novoProduto, error: erroInsert } = await supabase
-          .from('produto')
-          .insert(dadosProduto)
-          .select('id')
-          .single();
-
-        if (erroInsert) {
-          console.error('Erro ao criar produto:', erroInsert);
-          setErroDetalhado(extrairErroSupabase(erroInsert, 'Falha ao cadastrar o novo produto.'));
-          setSalvando(false);
-          return;
-        }
-        produtoIdFinal = novoProduto.id;
+      if (erroEntrada) {
+        console.error('Erro ao registrar entrada transacional:', erroEntrada);
+        setErroDetalhado(extrairErroSupabase(
+          erroEntrada,
+          'Não foi possível registrar a entrada. Nenhuma alteração parcial foi salva.'
+        ));
+        setSalvando(false);
+        return;
       }
 
-      // 2. Se for perecível com validade preenchida, cria um registro em `lote`
-      let loteIdFinal: string | null = null;
-      if (isPerecivel && validade) {
-        const dadosLote: {
-          empresa_id: string;
-          produto_id: string;
-          validade: string;
-          custo: number;
-        } = {
-          empresa_id: empresaIdAtivo,
-          produto_id: produtoIdFinal,
-          validade: validade,
-          custo: numPrecoCompra,
-        };
-
-        console.log('Objeto a ser inserido em lote:', dadosLote);
-
-        const { data: novoLote, error: erroLote } = await supabase
-          .from('lote')
-          .insert(dadosLote)
-          .select('id')
-          .single();
-
-        if (erroLote) {
-          console.error('Erro ao criar lote:', erroLote);
-          setErroDetalhado(extrairErroSupabase(erroLote, 'Falha ao registrar o lote com validade do produto.'));
-          setSalvando(false);
-          return;
-        } else if (novoLote) {
-          loteIdFinal = novoLote.id;
-        }
-      }
-
-      // 3. SEMPRE insere em `movimento` com tipo='entrada', quantidade positiva e custo_unit preenchido
-      const dadosMovimento: {
-        empresa_id: string;
-        produto_id: string;
-        lote_id: string | null;
-        tipo: 'entrada';
-        quantidade: number;
-        custo_unit: number;
-        preco_unit: number;
-        motivo: string;
-        criado_por: string | null;
-      } = {
-        empresa_id: empresaIdAtivo,
-        produto_id: produtoIdFinal,
-        lote_id: loteIdFinal,
-        tipo: 'entrada',
-        quantidade: numQuantidadeFinal,
-        custo_unit: numPrecoCompra,
-        preco_unit: numPrecoVenda,
-        motivo: 'Entrada manual / Cadastro',
-        criado_por: usuario?.id || null,
-      };
-
-      console.log('Objeto a ser inserido em movimento:', dadosMovimento);
-
-      const { error: erroMovimento } = await supabase
-        .from('movimento')
-        .insert(dadosMovimento);
-
-      if (erroMovimento) {
-        console.error('Erro ao inserir movimento:', erroMovimento);
-        setErroDetalhado(extrairErroSupabase(erroMovimento, 'Produto salvo, mas houve uma falha ao registrar a entrada no estoque.'));
+      if (!produtoIdFinal) {
+        setErroDetalhado({ amigavel: 'A entrada não retornou um produto válido. Tente novamente.' });
         setSalvando(false);
         return;
       }

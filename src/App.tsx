@@ -40,16 +40,15 @@ const obterCaminhoPorRota = (rota: TabRota): string => {
 
 const obterRotaInicial = (): { tela: 'login' | 'app'; rota: TabRota } => {
   const caminho = window.location.pathname;
-  // Pula a tela de login por padrão para permitir teste direto do sistema
-  if (caminho === '/login' || caminho === '/') {
-    return { tela: 'app', rota: 'painel' };
+  if (caminho === '/login') {
+    return { tela: 'login', rota: 'painel' };
   }
   const rotaEncontrada = ROTAS_VALIDAS[caminho] || 'painel';
   return { tela: 'app', rota: rotaEncontrada };
 };
 
 const ConteudoPrincipal: React.FC = () => {
-  const { usuario, papel, carregando } = useAuth();
+  const { usuario, papel, carregando, modoTeste } = useAuth();
   const [telaAtual, setTelaAtual] = useState<'login' | 'app'>(() => obterRotaInicial().tela);
   const [rotaAtiva, setRotaAtiva] = useState<TabRota>(() => obterRotaInicial().rota);
 
@@ -76,7 +75,7 @@ const ConteudoPrincipal: React.FC = () => {
     setRotaAtiva(novaRota);
     setTelaAtual('app');
     navegarParaCaminho(obterCaminhoPorRota(novaRota));
-  }, [papel, navegarParaCaminho]);
+  }, [papel, usuario, modoTeste, navegarParaCaminho]);
 
   const irParaCaixa = useCallback(() => {
     irParaRota('caixa');
@@ -84,30 +83,42 @@ const ConteudoPrincipal: React.FC = () => {
 
   // Sincroniza rota quando o papel do usuário é alterado (ex: alternar para Operador de Caixa)
   useEffect(() => {
-    if (!carregando) {
-      if (papel === 'operador') {
+    if (carregando) return;
+
+    if (!usuario && !modoTeste) {
+      setTelaAtual('login');
+      if (window.location.pathname !== '/login') {
+        navegarParaCaminho('/login');
+      }
+      return;
+    }
+
+    if (papel === 'operador') {
+      setTelaAtual('app');
+      setRotaAtiva('caixa');
+      if (window.location.pathname !== '/caixa') {
+        navegarParaCaminho('/caixa');
+      }
+      return;
+    }
+
+    if (usuario || modoTeste) {
+      if (telaAtual === 'login' || window.location.pathname === '/login') {
         setTelaAtual('app');
-        setRotaAtiva('caixa');
-        if (window.location.pathname !== '/caixa') {
-          navegarParaCaminho('/caixa');
-        }
-      } else {
-        // Papel dono
-        if (telaAtual === 'login' || window.location.pathname === '/login') {
-          setTelaAtual('app');
-          setRotaAtiva('painel');
-          navegarParaCaminho('/painel');
-        }
+        setRotaAtiva('painel');
+        navegarParaCaminho('/painel');
       }
     }
-  }, [usuario, papel, carregando, telaAtual, navegarParaCaminho]);
+  }, [usuario, papel, carregando, modoTeste, telaAtual, navegarParaCaminho]);
 
   // Listener para botões avançar/voltar do navegador
   useEffect(() => {
     const tratarPopState = () => {
       const caminho = window.location.pathname;
-      if (caminho === '/login') {
-        // Se explicitamente em /login no popstate
+      if (!usuario && !modoTeste) {
+        setTelaAtual('login');
+        navegarParaCaminho('/login');
+      } else if (caminho === '/login') {
         setTelaAtual('login');
       } else if (ROTAS_VALIDAS[caminho]) {
         const rota = ROTAS_VALIDAS[caminho];

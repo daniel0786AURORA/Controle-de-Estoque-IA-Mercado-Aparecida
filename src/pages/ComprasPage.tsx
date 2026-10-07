@@ -158,6 +158,7 @@ export const ComprasPage: React.FC = () => {
       let queryProdutos = supabase
         .from('produto')
         .select('id, empresa_id, ean, nome, categoria_id, unidade, custo, preco, ativo, estoque_minimo')
+        .eq('empresa_id', empresaId)
         .eq('ativo', true);
 
       if (empresaId) {
@@ -167,11 +168,13 @@ export const ComprasPage: React.FC = () => {
       // 2. Consulta giro (v_giro) e estoque (v_estoque)
       let queryGiro = supabase
         .from('v_giro')
-        .select('produto_id, empresa_id, vendido_30d, media_dia');
+        .select('produto_id, empresa_id, vendido_30d, media_dia')
+        .eq('empresa_id', empresaId);
 
       let queryEstoque = supabase
         .from('v_estoque')
-        .select('produto_id, empresa_id, saldo, valor_custo');
+        .select('produto_id, empresa_id, saldo, valor_custo')
+        .eq('empresa_id', empresaId);
 
       if (empresaId) {
         queryGiro = queryGiro.eq('empresa_id', empresaId);
@@ -367,6 +370,7 @@ export const ComprasPage: React.FC = () => {
         let query = supabase
           .from('produto')
           .select('id, empresa_id, ean, nome, unidade, custo, preco, estoque_minimo')
+          .eq('empresa_id', empresaId)
           .or(`nome.ilike.%${termo}%,ean.ilike.%${termo}%`)
           .eq('ativo', true)
           .limit(8);
@@ -386,8 +390,8 @@ export const ComprasPage: React.FC = () => {
 
         const pIds = prods.map((p) => p.id);
         const [resEstoque, resGiro] = await Promise.all([
-          supabase.from('v_estoque').select('produto_id, saldo').in('produto_id', pIds),
-          supabase.from('v_giro').select('produto_id, media_dia, vendido_30d').in('produto_id', pIds),
+          supabase.from('v_estoque').select('produto_id, saldo').eq('empresa_id', empresaId).in('produto_id', pIds),
+          supabase.from('v_giro').select('produto_id, media_dia, vendido_30d').eq('empresa_id', empresaId).in('produto_id', pIds),
         ]);
 
         const estMap = new Map<string, number>();
@@ -684,8 +688,8 @@ export const ComprasPage: React.FC = () => {
   // Se o usuário logado não for dono, bloqueia o acesso
   if (!ehDono) {
     return (
-      <div className="w-full max-w-7xl mx-auto p-4 sm:p-6 md:p-8 flex flex-col items-center justify-center min-h-[60vh]">
-        <div className="bg-white p-8 rounded-2xl border border-[#14211C]/15 shadow-sm text-center max-w-md">
+      <div className="w-full max-w-[1180px] mx-auto p-3 sm:p-4 md:p-5 flex flex-col items-center justify-center min-h-[60vh]">
+        <div className="bg-white p-6 rounded-2xl border border-[#14211C]/15 shadow-sm text-center max-w-md">
           <div className="w-14 h-14 bg-[#C4361A]/10 text-[#C4361A] rounded-2xl flex items-center justify-center mx-auto mb-4">
             <ShieldAlert className="w-8 h-8" />
           </div>
@@ -770,12 +774,12 @@ export const ComprasPage: React.FC = () => {
   };
 
   return (
-    <div className="w-full max-w-7xl mx-auto p-4 sm:p-6 md:p-8 space-y-6">
+    <div className="w-full max-w-[1180px] mx-auto p-3 sm:p-4 md:p-5 space-y-4 sm:space-y-5">
       
       {/* Cabeçalho Principal */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-[#14211C] tracking-tight flex items-center gap-2.5">
+          <h1 className="text-xl sm:text-2xl font-bold text-[#14211C] tracking-tight flex items-center gap-2.5">
             <Truck className="w-7 h-7 text-[#0E7A4F]" />
             Compras e Reposição
           </h1>
@@ -880,7 +884,7 @@ export const ComprasPage: React.FC = () => {
             <span className="text-xs font-semibold text-[#14211C]/60 uppercase tracking-wider block">
               Itens no Pedido
             </span>
-            <div className="text-2xl sm:text-3xl font-bold text-[#14211C] tracking-tight">
+            <div className="text-xl sm:text-2xl font-bold text-[#14211C] tracking-tight">
               {carregando ? (
                 <div className="h-8 bg-[#14211C]/10 rounded w-16 animate-pulse" />
               ) : (
@@ -903,7 +907,7 @@ export const ComprasPage: React.FC = () => {
               <span className="text-xs font-semibold text-[#14211C]/60 uppercase tracking-wider block">
                 Investimento Total
               </span>
-              <div className="text-2xl sm:text-3xl font-bold text-[#14211C] tracking-tight">
+              <div className="text-xl sm:text-2xl font-bold text-[#14211C] tracking-tight">
                 {carregando ? (
                   <div className="h-8 bg-[#14211C]/10 rounded w-28 animate-pulse" />
                 ) : (
@@ -930,7 +934,7 @@ export const ComprasPage: React.FC = () => {
             <span className="text-xs font-semibold text-[#14211C]/60 uppercase tracking-wider block">
               Lucro Esperado
             </span>
-            <div className="text-2xl sm:text-3xl font-bold text-[#0E7A4F] tracking-tight">
+            <div className="text-xl sm:text-2xl font-bold text-[#0E7A4F] tracking-tight">
               {carregando ? (
                 <div className="h-8 bg-[#0E7A4F]/10 rounded w-28 animate-pulse" />
               ) : (

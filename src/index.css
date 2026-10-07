@@ -1,1 +1,313 @@
 @import "tailwindcss";
+
+:root {
+  color-scheme: light;
+  --bg: #f7faf8;
+  --surface: rgba(255,255,255,.82);
+  --surface-solid: #ffffff;
+  --surface-soft: #f9fbfa;
+  --line: rgba(30, 60, 47, .09);
+  --line-strong: rgba(30, 60, 47, .14);
+  --text: #1e2d26;
+  --muted: #7b8982;
+  --green: #16845a;
+  --green-2: #36b37e;
+  --green-soft: #eef9f3;
+  --danger: #c8472d;
+  --warning: #b77a1d;
+  --shadow-xs: 0 1px 2px rgba(28, 49, 40, .025);
+  --shadow-sm: 0 8px 30px rgba(40, 67, 54, .055);
+  --shadow-md: 0 18px 50px rgba(40, 67, 54, .085);
+}
+
+* { box-sizing: border-box; }
+
+html { background: var(--bg); }
+
+body {
+  margin: 0;
+  min-width: 320px;
+  color: var(--text);
+  font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  background:
+    radial-gradient(circle at 8% 2%, rgba(54,179,126,.10), transparent 24rem),
+    radial-gradient(circle at 92% 12%, rgba(153,214,181,.13), transparent 28rem),
+    linear-gradient(180deg, #fbfdfc 0%, #f6f9f7 44%, #f7faf8 100%);
+  background-attachment: fixed;
+}
+
+button, input, select, textarea { font: inherit; }
+
+button, a, input, select, textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+::selection { background: rgba(54,179,126,.18); }
+
+.app-surface {
+  position: relative;
+  isolation: isolate;
+  background: transparent;
+}
+
+.app-surface::before,
+.app-surface::after {
+  content: "";
+  position: fixed;
+  z-index: -1;
+  pointer-events: none;
+  border-radius: 999px;
+  filter: blur(70px);
+  opacity: .42;
+}
+
+.app-surface::before {
+  width: 320px;
+  height: 320px;
+  top: 120px;
+  left: -100px;
+  background: rgba(120, 220, 167, .20);
+}
+
+.app-surface::after {
+  width: 360px;
+  height: 360px;
+  right: -130px;
+  bottom: 5vh;
+  background: rgba(184, 226, 204, .22);
+}
+
+.app-surface > div {
+  animation: page-enter 320ms cubic-bezier(.2,.7,.2,1);
+}
+
+/* Cards */
+.app-surface .bg-white.rounded-xl,
+.app-surface .bg-white.rounded-2xl {
+  background: rgba(255,255,255,.86) !important;
+  border-color: var(--line) !important;
+  box-shadow: var(--shadow-sm) !important;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  transition:
+    transform 220ms cubic-bezier(.2,.7,.2,1),
+    box-shadow 220ms ease,
+    border-color 220ms ease,
+    background-color 220ms ease;
+}
+
+.app-surface .bg-white.rounded-xl:hover,
+.app-surface .bg-white.rounded-2xl:hover {
+  border-color: var(--line-strong) !important;
+  box-shadow: var(--shadow-md) !important;
+  transform: translateY(-2px);
+}
+
+/* Tables */
+.app-surface table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.app-surface thead {
+  background: rgba(247,250,248,.82) !important;
+}
+
+.app-surface thead th {
+  color: #7a8881 !important;
+  font-size: .70rem;
+  letter-spacing: .055em;
+  text-transform: uppercase;
+  font-weight: 700 !important;
+}
+
+.app-surface tbody tr {
+  transition: background-color 160ms ease, transform 160ms ease;
+}
+
+.app-surface tbody tr:hover {
+  background-color: rgba(238,249,243,.72) !important;
+}
+
+/* Form controls */
+.app-surface input,
+.app-surface select,
+.app-surface textarea {
+  border-color: var(--line-strong) !important;
+  background-color: rgba(255,255,255,.84) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.9), var(--shadow-xs);
+  transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+}
+
+.app-surface input:focus,
+.app-surface select:focus,
+.app-surface textarea:focus {
+  border-color: rgba(22,132,90,.45) !important;
+  background-color: #fff !important;
+  box-shadow: 0 0 0 4px rgba(54,179,126,.10) !important;
+}
+
+/* Buttons */
+.app-surface button {
+  transition:
+    transform 160ms cubic-bezier(.2,.7,.2,1),
+    box-shadow 160ms ease,
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease;
+}
+
+.app-surface button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.app-surface button:active:not(:disabled) {
+  transform: translateY(0) scale(.985);
+}
+
+.app-surface h1 {
+  letter-spacing: -.04em;
+  font-weight: 760;
+}
+
+.app-surface h2,
+.app-surface h3 {
+  letter-spacing: -.025em;
+}
+
+.app-surface .shadow-sm {
+  box-shadow: var(--shadow-sm) !important;
+}
+
+.app-surface .animate-pulse {
+  background-image: linear-gradient(90deg, rgba(30,45,38,.035), rgba(30,45,38,.075), rgba(30,45,38,.035));
+  background-size: 240% 100%;
+  animation: shimmer 1.5s linear infinite;
+}
+
+.no-scrollbar::-webkit-scrollbar,
+.scrollbar-none::-webkit-scrollbar { display: none; }
+
+.no-scrollbar,
+.scrollbar-none { scrollbar-width: none; }
+
+.custom-scrollbar::-webkit-scrollbar,
+.app-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb,
+.app-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(101,127,114,.28);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track,
+.app-scrollbar::-webkit-scrollbar-track { background: transparent; }
+
+@keyframes page-enter {
+  from { opacity: 0; transform: translateY(7px) scale(.998); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes shimmer {
+  from { background-position: 120% 0; }
+  to { background-position: -120% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-surface > div,
+  .app-surface .animate-pulse {
+    animation: none !important;
+  }
+  .app-surface button,
+  .app-surface tbody tr,
+  .app-surface .bg-white.rounded-xl,
+  .app-surface .bg-white.rounded-2xl {
+    transition: none !important;
+  }
+}
+
+
+/* Delicate decorative interaction layer */
+.app-surface .bg-white.rounded-xl,
+.app-surface .bg-white.rounded-2xl {
+  position: relative;
+  overflow: hidden;
+}
+
+.app-surface .bg-white.rounded-xl::after,
+.app-surface .bg-white.rounded-2xl::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    linear-gradient(120deg, rgba(255,255,255,.55), transparent 28%, transparent 72%, rgba(94,190,143,.05)),
+    radial-gradient(circle at 18% 0%, rgba(126,219,172,.07), transparent 30%);
+  opacity: .52;
+  transition: opacity 220ms ease;
+}
+
+.app-surface .bg-white.rounded-xl:hover::after,
+.app-surface .bg-white.rounded-2xl:hover::after {
+  opacity: .86;
+}
+
+.app-surface [class*="bg-[#0E7A4F]"],
+.app-surface [class*="bg-[#16845A]"] {
+  box-shadow: 0 8px 20px rgba(22,132,90,.14);
+}
+
+@media (max-width: 1280px) {
+  .app-surface {
+    font-size: 0.95rem;
+  }
+
+  .app-surface [class*="rounded-xl"],
+  .app-surface [class*="rounded-2xl"] {
+    border-radius: 14px;
+  }
+
+  .app-surface table {
+    font-size: .88rem;
+  }
+
+  .app-surface thead th {
+    font-size: .66rem;
+  }
+}
+
+@media (max-width: 1024px) {
+  .app-surface {
+    font-size: 0.92rem;
+  }
+
+  .app-surface table {
+    font-size: .84rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .app-surface::before,
+  .app-surface::after {
+    opacity: .28;
+    filter: blur(90px);
+  }
+
+  .app-surface .bg-white.rounded-xl:hover,
+  .app-surface .bg-white.rounded-2xl:hover,
+  .app-surface button:hover:not(:disabled) {
+    transform: none;
+  }
+
+  .app-surface table {
+    font-size: .8rem;
+  }
+}

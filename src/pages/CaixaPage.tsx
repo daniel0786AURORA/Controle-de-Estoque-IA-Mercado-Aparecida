@@ -61,6 +61,7 @@ export const CaixaPage: React.FC = () => {
   const [painelDescontoAberto, setPainelDescontoAberto] = useState(false);
   const [descontoAplicadoValor, setDescontoAplicadoValor] = useState(0);
   const [descontoAplicadoPor, setDescontoAplicadoPor] = useState<string | null>(null);
+  const [descontoAutorizacaoToken, setDescontoAutorizacaoToken] = useState<string | null>(null);
   const [descontoMotivo, setDescontoMotivo] = useState('');
   
   const [valorACobrarInput, setValorACobrarInput] = useState('');
@@ -121,6 +122,7 @@ export const CaixaPage: React.FC = () => {
         .from('produto')
         .select('id, empresa_id, ean, nome, unidade, custo, preco')
         .or(`nome.ilike.%${termo}%,ean.ilike.%${termo}%`)
+        .eq('empresa_id', empresaId)
         .eq('ativo', true)
         .limit(7);
 
@@ -285,6 +287,7 @@ export const CaixaPage: React.FC = () => {
     setModalCancelamento(false);
     setDescontoAplicadoValor(0);
     setDescontoAplicadoPor(null);
+    setDescontoAutorizacaoToken(null);
     setDescontoMotivo('');
     manterFoco();
   };
@@ -347,61 +350,35 @@ export const CaixaPage: React.FC = () => {
     setMensagemErroVenda(null);
     setMensagemSucesso(null);
 
-    // PASSO 1, 2 e 3: Preparar itens, calcular rateio e descontos
-    const totalDaVenda = totalComDescontoItem; // total antes do desconto manual
+    // O frontend apenas calcula o preço final para UX. O banco recalcula custo,
+    // promoção, desconto, taxa e autorização dentro da mesma transação.
+    const totalDaVenda = totalComDescontoItem;
     const descontoManualTotal = descontoAplicadoValor;
 
-    const itensCalculados = carrinho.map((item) => {
-      // Passo 1
-      const precoCheio = Number(item.preco_cheio || 0);
-      const precoPromocional = Number(item.preco_venda || 0);
-      const descontoPromo = Math.max(0, precoCheio - precoPromocional);
-
-      // Passo 2
+    const itensParaRpc = carrinho.map((item) => {
       let descontoCaixaPorUnidade = 0;
+
       if (descontoManualTotal > 0 && totalDaVenda > 0) {
-        const subtotalDoItem = item.subtotal; // item.preco_venda * item.quantidade
-        const descontoCaixaDoItem = descontoManualTotal * (subtotalDoItem / totalDaVenda);
+        const descontoCaixaDoItem = descontoManualTotal * (item.subtotal / totalDaVenda);
         descontoCaixaPorUnidade = descontoCaixaDoItem / item.quantidade;
       }
 
-      // Passo 3
-      const descontoUnit = descontoPromo + descontoCaixaPorUnidade;
-      let descontoOrigem: 'ambos' | 'promocao' | 'caixa' | null = null;
-      
-      if (descontoPromo > 0 && descontoCaixaPorUnidade > 0) {
-         descontoOrigem = 'ambos';
-      } else if (descontoPromo > 0) {
-         descontoOrigem = 'promocao';
-      } else if (descontoCaixaPorUnidade > 0) {
-         descontoOrigem = 'caixa';
-      }
-
-      // Preço final que vai pro RPC
-      const precoFinal = precoCheio - descontoUnit;
+      const precoFinal = Math.max(0, Number(item.preco_venda) - descontoCaixaPorUnidade);
 
       return {
         produto_id: item.id,
         quantidade: item.quantidade,
-        preco_unit: precoFinal,
-        custo_unit: item.custo,
-        desconto_unit: descontoUnit,
-        desconto_origem: descontoOrigem
+        preco_unit: Number(precoFinal.toFixed(2)),
       };
     });
 
     try {
-      // PASSO 4: Chamar fechar_venda
-      console.log('Enviando itens para RPC fechar_venda:', itensCalculados);
       const { data, error } = await supabase.rpc('fechar_venda', {
-        p_itens: itensCalculados.map(i => ({
-           produto_id: i.produto_id,
-           quantidade: i.quantidade,
-           preco_unit: i.preco_unit,
-           custo_unit: i.custo_unit,
-           desconto_unit: i.desconto_unit // Envia, mesmo sabendo que a RPC talvez não salve
-        })),
+        p_itens: itensParaRpc,
         p_forma: forma,
+        p_desconto_motivo: descontoManualTotal > 0 ? descontoMotivo : null,
+        p_autorizador_id: descontoManualTotal > 0 ? descontoAplicadoPor : null,
+        p_autorizacao_token: descontoManualTotal > 0 ? descontoAutorizacaoToken : null,
       });
 
       if (error) {
@@ -409,60 +386,12 @@ export const CaixaPage: React.FC = () => {
         setMensagemErroVenda(error.message || 'Falha ao registrar venda.');
         return;
       }
-      
-      // Resgatar o ID da venda gerada
-      let vendaId = data;
+
+      const vendaId = data;
       if (!vendaId || typeof vendaId !== 'string' || vendaId.length < 10) {
-         // Fallback se a RPC não retornar o UUID
-         const { data: vendasRecentes } = await supabase.from('venda')
-           .select('id')
-           .eq('empresa_id', empresaId)
-           .eq('operador_id', usuario?.id)
-           .order('criado_em', { ascending: false })
-           .limit(1);
-         if (vendasRecentes && vendasRecentes.length > 0) {
-           vendaId = vendasRecentes[0].id;
-         }
-      }
-
-      // PASSO 5: Updates diretos
-      if (vendaId) {
-         // a) Update na tabela venda (se houve desconto manual)
-         if (descontoManualTotal > 0 && usuario) {
-            const vendaUpdate = {
-              desconto: descontoManualTotal,
-              desconto_por: descontoAplicadoPor || usuario.id,
-              desconto_motivo: descontoMotivo || 'Não informado'
-            };
-            console.log('Atualizando venda (desconto manual):', vendaId, vendaUpdate);
-            const { error: erroVenda } = await supabase.from('venda').update(vendaUpdate).eq('id', vendaId);
-            if (erroVenda) {
-               console.error('Erro ao atualizar desconto na venda:', erroVenda);
-               setMensagemErroVenda(erroVenda.message || 'Falha ao gravar desconto no total da venda.');
-               return; // Parar fluxo se der erro
-            }
-         }
-
-         // b) Update na tabela venda_item por item que teve desconto
-         for (const item of itensCalculados) {
-            if (item.desconto_unit > 0) {
-               const itemUpdate = {
-                 desconto_unit: item.desconto_unit,
-                 desconto_origem: item.desconto_origem
-               };
-               console.log(`Atualizando venda_item (venda: ${vendaId}, produto: ${item.produto_id}):`, itemUpdate);
-               const { error: erroItem } = await supabase.from('venda_item')
-                  .update(itemUpdate)
-                  .eq('venda_id', vendaId)
-                  .eq('produto_id', item.produto_id);
-                  
-               if (erroItem) {
-                  console.error(`Erro ao atualizar desconto no item ${item.produto_id}:`, erroItem);
-                  setMensagemErroVenda(erroItem.message || 'Falha ao gravar descontos nos itens.');
-                  return; // Parar fluxo
-               }
-            }
-         }
+        setMensagemErroVenda('O servidor não retornou um identificador válido para a venda. A operação precisa ser verificada antes de continuar.');
+        console.error('RPC fechar_venda não retornou UUID confiável:', data);
+        return;
       }
 
       const totalFinal = totalComDescontoItem - descontoManualTotal;
@@ -472,6 +401,7 @@ export const CaixaPage: React.FC = () => {
       setSugestoes([]);
       setDescontoAplicadoValor(0);
       setDescontoAplicadoPor(null);
+      setDescontoAutorizacaoToken(null);
       setDescontoMotivo('');
       setPainelDescontoAberto(false);
       
@@ -571,13 +501,28 @@ export const CaixaPage: React.FC = () => {
              return;
           }
           const autorizadorId = data.user.id;
-          const { data: perfilDono } = await supabase.from('perfil').select('papel').eq('id', autorizadorId).single();
-          if (perfilDono?.papel !== 'dono') {
-             setAuthError('O usuário informado não tem permissão de dono.');
-             setValidandoAuth(false);
-             return;
+          const approvalRes = await fetch(
+            `${(import.meta as any).env.VITE_SUPABASE_URL}/rest/v1/rpc/criar_autorizacao_caixa`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'apikey': (import.meta as any).env.VITE_SUPABASE_ANON_KEY,
+                'Authorization': `Bearer ${data.access_token}`,
+              },
+              body: '{}',
+            }
+          );
+
+          const approvalToken = await approvalRes.json();
+          if (!approvalRes.ok || typeof approvalToken !== 'string') {
+            setAuthError('O usuário informado não possui permissão de dono para autorizar este desconto.');
+            setValidandoAuth(false);
+            return;
           }
+
           setDescontoAplicadoPor(autorizadorId);
+          setDescontoAutorizacaoToken(approvalToken);
        } catch (err) {
           setAuthError('Erro ao validar autorização.');
           setValidandoAuth(false);
@@ -599,10 +544,10 @@ export const CaixaPage: React.FC = () => {
   const totalDesconto = totalDescontoItens;
 
   return (
-    <div className="w-full max-w-7xl mx-auto h-[calc(100vh-4rem)] flex flex-col md:flex-row overflow-hidden bg-white">
+    <div className="w-full max-w-[1180px] mx-auto h-[calc(100dvh-8.25rem)] min-h-[560px] flex flex-col md:flex-row overflow-hidden bg-white/88 backdrop-blur-xl rounded-[22px] border border-white/70 shadow-[0_16px_50px_rgba(45,76,61,.08)] mt-3 mb-4">
       {/* Coluna Esquerda: Busca e Feedback */}
-      <div className="flex-1 flex flex-col border-r border-[#14211C]/10 p-4 sm:p-6 md:p-8 overflow-hidden relative">
-        <h1 className="text-2xl sm:text-3xl font-bold text-[#14211C] mb-6 shrink-0">Caixa</h1>
+      <div className="flex-1 flex flex-col border-r border-[#14211C]/8 p-3 sm:p-4 md:p-5 overflow-hidden relative">
+        <h1 className="text-xl sm:text-xl font-bold text-[#14211C] mb-4 shrink-0">Caixa</h1>
         
         {/* Campo de Bipagem */}
         <div className="relative shrink-0 z-20">
@@ -627,7 +572,7 @@ export const CaixaPage: React.FC = () => {
                 if (e.relatedTarget && (e.relatedTarget as HTMLElement).closest('.fixed')) return;
                 manterFoco(e);
               }}
-              className={`block w-full pl-12 pr-4 py-4 text-xl md:text-2xl font-semibold border-2 rounded-xl focus:ring-0 focus:border-[#2C4A3E] focus:bg-white outline-none transition-all placeholder:text-[#14211C]/30 ${multiplicador !== null ? 'border-[#2C4A3E] ring-4 ring-[#2C4A3E]/20 bg-[#2C4A3E]/5' : 'bg-[#EEF1EC]/30 border-[#14211C]/20'}`}
+              className={`block w-full pl-12 pr-4 py-3.5 text-lg md:text-xl font-semibold border-2 rounded-xl focus:ring-0 focus:border-[#2C4A3E] focus:bg-white outline-none transition-all placeholder:text-[#14211C]/30 ${multiplicador !== null ? 'border-[#2C4A3E] ring-4 ring-[#2C4A3E]/20 bg-[#2C4A3E]/5' : 'bg-[#EEF1EC]/30 border-[#14211C]/20'}`}
               placeholder="Bipe o código ou digite o nome..."
               autoFocus
             />
@@ -691,7 +636,7 @@ export const CaixaPage: React.FC = () => {
       <div className="w-full md:w-[450px] lg:w-[500px] bg-[#EEF1EC]/30 flex flex-col h-full border-l border-[#14211C]/10 shrink-0">
         
         {/* Cabeçalho do Carrinho */}
-        <div className="p-4 sm:p-6 border-b border-[#14211C]/10 bg-white flex justify-between items-center shrink-0">
+        <div className="p-3 sm:p-4 border-b border-[#14211C]/10 bg-white flex justify-between items-center shrink-0">
           <h2 className="text-xl font-bold text-[#14211C] flex items-center gap-2">
             <ShoppingCart className="w-5 h-5" />
             Carrinho
@@ -702,7 +647,7 @@ export const CaixaPage: React.FC = () => {
         </div>
 
         {/* Lista de Itens */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3">
           {carrinho.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-[#14211C]/40">
               <ShoppingCart className="w-16 h-16 mb-4 opacity-20" />
@@ -726,7 +671,7 @@ export const CaixaPage: React.FC = () => {
                     <div className="flex items-center gap-1">
                       <button 
                         onClick={() => atualizarQuantidade(item.id_carrinho, item.quantidade - (item.unidade === 'kg' ? 0.1 : 1))}
-                        className="w-11 h-11 bg-[#EEF1EC] text-[#14211C] hover:bg-[#14211C]/10 rounded-xl flex items-center justify-center font-bold text-2xl transition-colors shrink-0"
+                        className="w-9 h-9 bg-[#EEF1EC] text-[#14211C] hover:bg-[#14211C]/10 rounded-xl flex items-center justify-center font-bold text-2xl transition-colors shrink-0"
                       >
                         −
                       </button>
@@ -743,7 +688,7 @@ export const CaixaPage: React.FC = () => {
 
                       <button 
                         onClick={() => atualizarQuantidade(item.id_carrinho, item.quantidade + (item.unidade === 'kg' ? 0.1 : 1))}
-                        className="w-11 h-11 bg-[#EEF1EC] text-[#14211C] hover:bg-[#14211C]/10 rounded-xl flex items-center justify-center font-bold text-2xl transition-colors shrink-0"
+                        className="w-9 h-9 bg-[#EEF1EC] text-[#14211C] hover:bg-[#14211C]/10 rounded-xl flex items-center justify-center font-bold text-2xl transition-colors shrink-0"
                       >
                         +
                       </button>
@@ -764,7 +709,7 @@ export const CaixaPage: React.FC = () => {
                   <div className="font-bold text-xl text-[#14211C]">{formatarMoeda(item.subtotal)}</div>
                   <button 
                     onClick={() => removerDoCarrinho(item.id_carrinho)}
-                    className="text-[#C4361A]/50 hover:text-[#C4361A] w-11 h-11 flex items-center justify-center rounded-xl hover:bg-[#C4361A]/10 transition-colors mt-auto"
+                    className="text-[#C4361A]/50 hover:text-[#C4361A] w-9 h-9 flex items-center justify-center rounded-xl hover:bg-[#C4361A]/10 transition-colors mt-auto"
                   >
                     <Trash2 className="w-5 h-5" />
                   </button>
@@ -775,12 +720,12 @@ export const CaixaPage: React.FC = () => {
         </div>
 
         {/* Rodapé: Totais e Pagamento */}
-        <div className="p-4 sm:p-6 bg-white border-t border-[#14211C]/10 shrink-0">
+        <div className="p-3 sm:p-4 bg-white border-t border-[#14211C]/10 shrink-0">
           <div className="flex flex-col items-end mb-4">
             <span className="text-sm font-semibold text-[#14211C]/60 uppercase tracking-wide">Total a Pagar</span>
             {descontoAplicadoValor > 0 && (
                <div className="flex flex-col items-end">
-                 <span className="text-2xl font-bold text-[#14211C]/40 line-through mb-1">{formatarMoeda(totalComDescontoItem)}</span>
+                 <span className="text-xl font-bold text-[#14211C]/40 line-through mb-1">{formatarMoeda(totalComDescontoItem)}</span>
                  <span className="text-green-600 font-bold text-lg mb-1">Desconto venda: -{formatarMoeda(descontoAplicadoValor)}</span>
                </div>
             )}
@@ -798,7 +743,7 @@ export const CaixaPage: React.FC = () => {
               </button>
             )}
             {descontoAplicadoValor > 0 && (
-              <button onClick={() => { setDescontoAplicadoValor(0); setDescontoAplicadoPor(null); setDescontoMotivo(''); }} className="text-sm font-bold text-[#C4361A] hover:text-[#9c2b15] mt-2 transition-colors">
+              <button onClick={() => { setDescontoAplicadoValor(0); setDescontoAplicadoPor(null); setDescontoAutorizacaoToken(null); setDescontoMotivo(''); }} className="text-sm font-bold text-[#C4361A] hover:text-[#9c2b15] mt-2 transition-colors">
                  Remover Desconto
               </button>
             )}
@@ -806,7 +751,7 @@ export const CaixaPage: React.FC = () => {
 
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-2.5">
             <button 
               onClick={() => fecharVenda('dinheiro')}
               disabled={carrinho.length === 0 || fechandoVenda}
@@ -984,7 +929,7 @@ export const CaixaPage: React.FC = () => {
                 className="w-full bg-[#EEF1EC]/50 border border-[#14211C]/20 rounded-xl px-4 py-3 text-base font-medium text-[#14211C] outline-none focus:border-[#0E7A4F] focus:ring-1 focus:ring-[#0E7A4F] transition-all"
               >
                 <option value="">Selecione um motivo...</option>
-                <option value="Arredondamento">Arredondamento</option>
+                <option value="Ajuste de centavos">Ajuste de centavos</option>
                 <option value="Cliente fiel">Cliente fiel</option>
                 <option value="Produto com avaria">Produto com avaria</option>
                 <option value="Outro">Outro</option>

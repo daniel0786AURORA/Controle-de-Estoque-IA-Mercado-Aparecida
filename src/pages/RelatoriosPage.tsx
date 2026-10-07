@@ -355,8 +355,8 @@ export const RelatoriosPage: React.FC = () => {
 
   if (!ehDono) {
     return (
-      <div className="w-full max-w-7xl mx-auto p-4 sm:p-6 md:p-8 flex flex-col items-center justify-center min-h-[60vh]">
-        <div className="bg-white p-8 rounded-2xl border border-[#14211C]/15 shadow-sm text-center max-w-md">
+      <div className="w-full max-w-[1180px] mx-auto p-3 sm:p-4 md:p-5 flex flex-col items-center justify-center min-h-[60vh]">
+        <div className="bg-white p-6 rounded-2xl border border-[#14211C]/15 shadow-sm text-center max-w-md">
           <div className="w-14 h-14 bg-[#C4361A]/10 text-[#C4361A] rounded-2xl flex items-center justify-center mx-auto mb-4">
             <ShieldAlert className="w-8 h-8" />
           </div>
@@ -370,10 +370,10 @@ export const RelatoriosPage: React.FC = () => {
   }
 
   return (
-    <div className="w-full max-w-7xl mx-auto p-4 sm:p-6 md:p-8 space-y-6">
+    <div className="w-full max-w-[1180px] mx-auto p-3 sm:p-4 md:p-5 space-y-4 sm:space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-[#14211C] flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-bold text-[#14211C] flex items-center gap-2">
             Relatórios Inteligentes
             <Sparkles className="w-5 h-5 text-[#935A12]" />
           </h1>
@@ -383,7 +383,7 @@ export const RelatoriosPage: React.FC = () => {
         </div>
       </div>
       
-      <div className="flex flex-col lg:flex-row gap-6">
+      <div className="flex flex-col lg:flex-row gap-4">
         {/* Principal */}
         <div className="flex-1 space-y-6">
           <div className="bg-white rounded-xl border border-[#14211C]/15 shadow-sm p-4 sm:p-6">

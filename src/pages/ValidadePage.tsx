@@ -123,7 +123,7 @@ const ModalCriarPromocao: React.FC<ModalCriarPromocaoProps> = ({ isOpen, onClose
           percentual,
           fim: dataFim,
           motivo: 'manual'
-        }).eq('id', promoId);
+        }).eq('id', promoId).eq('empresa_id', empresaId);
       } else {
         const { data, error } = await supabase.from('promocao').insert({
           empresa_id: empresaId,
@@ -395,7 +395,7 @@ const ModalDivulgar: React.FC<ModalDivulgarProps> = ({ isOpen, onClose, promo })
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#14211C]/50 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl w-full max-w-4xl p-6 shadow-xl flex flex-col md:flex-row gap-6 max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-2xl w-full max-w-4xl p-6 shadow-xl flex flex-col md:flex-row gap-4 max-h-[90vh] overflow-y-auto">
         
         {/* Esquerda: Imagem */}
         <div className="flex-1 flex flex-col items-center justify-center bg-gray-100 rounded-xl p-4">
@@ -507,7 +507,8 @@ export const ValidadePage: React.FC = () => {
       try {
         const { data: estData, error: estErr } = await supabase
           .from('v_estoque')
-          .select('*');
+          .select('*')
+          .eq('empresa_id', empresaId);
           
         if (!estErr && estData) {
           estData.forEach((est: any) => {
@@ -644,7 +645,7 @@ export const ValidadePage: React.FC = () => {
   const handleConfirmarCancelamento = async () => {
     if (!promoParaCancelar) return;
     try {
-      await supabase.from('promocao').update({ ativa: false }).eq('id', promoParaCancelar);
+      await supabase.from('promocao').update({ ativa: false }).eq('id', promoParaCancelar).eq('empresa_id', empresaId);
       setPromocoes(prev => prev.filter(p => p.id !== promoParaCancelar));
       setPromoParaCancelar(null);
     } catch (e) {
@@ -679,11 +680,11 @@ export const ValidadePage: React.FC = () => {
   };
 
   return (
-    <div className="w-full max-w-7xl mx-auto p-4 sm:p-6 md:p-8 space-y-8">
+    <div className="w-full max-w-[1180px] mx-auto p-3 sm:p-4 md:p-5 space-y-4 sm:space-y-5">
       
       {/* HEADER */}
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-[#14211C] tracking-tight flex items-center gap-2.5">
+        <h1 className="text-xl sm:text-2xl font-bold text-[#14211C] tracking-tight flex items-center gap-2.5">
           <CalendarDays className="w-7 h-7 text-[#0E7A4F]" />
           Controle de Validade e Promoções
         </h1>

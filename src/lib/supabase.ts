@@ -45,8 +45,12 @@ const realSupabase = createClient(
   }
 );
 
-// Flag para alternar modo offline/mock se falhar a rede
-let fallbackToMock = true; // Ativado para garantir teste imediato sem bloqueio de rede
+// Usa mock automaticamente apenas quando não há configuração real de Supabase.
+const temSupabaseReal = Boolean(
+  (import.meta as any).env.VITE_SUPABASE_URL &&
+  (import.meta as any).env.VITE_SUPABASE_ANON_KEY
+);
+let fallbackToMock = !temSupabaseReal;
 
 export function setModoMock(ativo: boolean) {
   fallbackToMock = ativo;
@@ -248,6 +252,7 @@ class MockQueryBuilder {
       case 'v_preco_atual':
         dataset = mockDatabase.getPrecoAtualView();
         break;
+      case 'v_giro':
       case 'v_giro_30d':
         dataset = mockDatabase.getGiro30dView();
         break;
@@ -263,6 +268,12 @@ class MockQueryBuilder {
         break;
       case 'config_taxa':
         dataset = [mockDatabase.getConfigTaxa()];
+        break;
+      case 'promocao':
+        dataset = mockDatabase.getPromocoes();
+        break;
+      case 'relatorio':
+        dataset = mockDatabase.getRelatorios();
         break;
       case 'perfil':
         dataset = [PERFIL_TESTE_ADMIN, PERFIL_TESTE_OPERADOR];
@@ -293,6 +304,10 @@ class MockQueryBuilder {
         }
       } else if (this.tabela === 'venda') {
         resultadoGravado = { id: `venda_${Date.now()}`, criado_em: new Date().toISOString(), ...payload };
+      } else if (this.tabela === 'promocao') {
+        resultadoGravado = mockDatabase.adicionarPromocao(payload);
+      } else if (this.tabela === 'relatorio') {
+        resultadoGravado = mockDatabase.adicionarRelatorio(payload);
       } else {
         resultadoGravado = { id: `item_${Date.now()}`, ...payload };
       }
@@ -318,6 +333,10 @@ class MockQueryBuilder {
         });
       } else if (this.tabela === 'config_taxa') {
         mockDatabase.atualizarConfigTaxa(payload);
+      } else if (this.tabela === 'promocao') {
+        dataset.filter((item) => this.filtros.every((f) => f(item))).forEach((p) => {
+          mockDatabase.atualizarPromocao(p.id, payload);
+        });
       }
       return { data: payload, error: null };
     }
@@ -389,54 +408,49 @@ class MockQueryBuilder {
 // Cliente exportado compatível com Supabase
 export const supabase: any = {
   from: (tabela: string) => {
+    // Demo e produção são mutuamente exclusivos. Em produção, erros reais
+    // nunca são convertidos silenciosamente em dados fictícios locais.
     if (fallbackToMock) {
       return new MockQueryBuilder(tabela);
     }
-    // Tenta cliente real, se falhar cai no mock
-    const query = realSupabase.from(tabela);
-    return new Proxy(query, {
-      get(target, prop, receiver) {
-        const orig = Reflect.get(target, prop, receiver);
-        if (typeof orig === 'function') {
-          return (...args: any[]) => {
-            const result = orig.apply(target, args);
-            if (result && typeof result.then === 'function') {
-              return result.catch((err: any) => {
-                console.warn(`[Supabase Fallback] Alternando consulta de ${tabela} para Mock:`, err?.message);
-                fallbackToMock = true;
-                return new MockQueryBuilder(tabela);
-              });
-            }
-            return result;
-          };
-        }
-        return orig;
-      },
-    });
+    return realSupabase.from(tabela);
   },
 
   rpc: async (fn: string, params: any) => {
-    if (fn === 'fechar_venda') {
-      console.log('[RPC fechar_venda Mock Executado]:', params);
-      const vendaId = mockDatabase.fecharVendaRPC({
-        p_itens: params.p_itens || [],
-        p_forma: params.p_forma || 'dinheiro',
-      });
-      return { data: vendaId, error: null };
-    }
-    if (!fallbackToMock) {
+    if (fallbackToMock && fn === 'fechar_venda') {
       try {
-        return await realSupabase.rpc(fn, params);
-      } catch (e) {
-        console.warn(`[RPC Fallback]: Falha na RPC ${fn}, usando simulação mock.`, e);
+        const vendaId = mockDatabase.fecharVendaRPC({
+          p_itens: params.p_itens || [],
+          p_forma: params.p_forma || 'dinheiro',
+          p_desconto_motivo: params.p_desconto_motivo || null,
+        });
+        return { data: vendaId, error: null };
+      } catch (err: any) {
+        return { data: null, error: { message: err?.message || 'Falha no fechamento da venda demo.' } };
       }
     }
-    return { data: `mock_rpc_${Date.now()}`, error: null };
+
+    if (fallbackToMock && fn === 'registrar_entrada_produto') {
+      try {
+        const produtoId = mockDatabase.registrarEntradaProdutoRPC(params || {});
+        return { data: produtoId, error: null };
+      } catch (err: any) {
+        return { data: null, error: { message: err?.message || 'Falha ao registrar entrada demo.' } };
+      }
+    }
+    if (!fallbackToMock) {
+      return await realSupabase.rpc(fn, params);
+    }
+
+    return {
+      data: null,
+      error: { message: `RPC ${fn} não implementada no modo demo.` }
+    };
   },
 
   auth: {
     getSession: async () => {
-      // Retorna sessão do usuário de teste
+      if (!fallbackToMock) return realSupabase.auth.getSession();
       return {
         data: {
           session: {
@@ -449,11 +463,16 @@ export const supabase: any = {
         error: null,
       };
     },
+
     getUser: async () => {
+      if (!fallbackToMock) return realSupabase.auth.getUser();
       return { data: { user: USUARIO_TESTE_ADMIN }, error: null };
     },
+
     onAuthStateChange: (callback: (event: string, session: any) => void) => {
-      // Dispara imediatamente sessão ativa para inicialização instantânea
+      if (!fallbackToMock) {
+        return realSupabase.auth.onAuthStateChange(callback);
+      }
       setTimeout(() => {
         callback('SIGNED_IN', {
           user: USUARIO_TESTE_ADMIN,
@@ -462,25 +481,32 @@ export const supabase: any = {
       }, 0);
       return {
         data: {
-          subscription: {
-            unsubscribe: () => {},
-          },
+          subscription: { unsubscribe: () => {} },
         },
       };
     },
+
     signInWithPassword: async ({ email, password }: { email: string; password: string }) => {
+      if (!fallbackToMock) {
+        return realSupabase.auth.signInWithPassword({ email, password });
+      }
       if (email.toLowerCase().includes('operador')) {
         return {
-          data: { user: { ...USUARIO_TESTE_ADMIN, id: PERFIL_TESTE_OPERADOR.id, email } },
+          data: {
+            user: { ...USUARIO_TESTE_ADMIN, id: PERFIL_TESTE_OPERADOR.id, email },
+            session: null,
+          },
           error: null,
         };
       }
       return {
-        data: { user: USUARIO_TESTE_ADMIN },
+        data: { user: USUARIO_TESTE_ADMIN, session: null },
         error: null,
       };
     },
+
     signOut: async () => {
+      if (!fallbackToMock) return realSupabase.auth.signOut();
       return { error: null };
     },
   },

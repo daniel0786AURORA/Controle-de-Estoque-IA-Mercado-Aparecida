@@ -704,12 +704,12 @@ export const EstoquePage: React.FC = () => {
   const temFiltroAtivo = busca.trim() !== '' || categoriaSelecionada !== 'todas';
 
   return (
-    <div className="w-full max-w-7xl mx-auto p-3 sm:p-6 space-y-4 sm:space-y-6">
+    <div className="w-full max-w-[1180px] mx-auto p-3 sm:p-4 md:p-5 space-y-4 sm:space-y-5">
       
       {/* Cabeçalho da Página */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-[#14211C]/10">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-[#14211C] tracking-tight flex items-center gap-2.5">
+          <h1 className="text-xl sm:text-2xl font-bold text-[#14211C] tracking-tight flex items-center gap-2.5">
             <Boxes className="w-7 h-7 text-[#0E7A4F]" />
             Estoque
           </h1>

@@ -2,194 +2,220 @@
 
 :root {
   color-scheme: light;
-  --app-bg: #f5f7f4;
-  --app-surface: #ffffff;
-  --app-surface-soft: #f8faf8;
-  --app-border: #e3e8e3;
-  --app-border-strong: #d7ddd7;
-  --app-text: #17231e;
-  --app-muted: #66736d;
-  --app-green: #0e7a4f;
-  --app-green-strong: #0a6240;
-  --app-green-soft: #eaf6ef;
-  --app-danger: #c4361a;
-  --app-warning: #9a6110;
-  --app-shadow-sm: 0 1px 2px rgba(20, 33, 28, 0.04), 0 6px 20px rgba(20, 33, 28, 0.035);
-  --app-shadow-md: 0 10px 30px rgba(20, 33, 28, 0.075);
+  --bg: #f7faf8;
+  --surface: rgba(255,255,255,.82);
+  --surface-solid: #ffffff;
+  --surface-soft: #f9fbfa;
+  --line: rgba(30, 60, 47, .09);
+  --line-strong: rgba(30, 60, 47, .14);
+  --text: #1e2d26;
+  --muted: #7b8982;
+  --green: #16845a;
+  --green-2: #36b37e;
+  --green-soft: #eef9f3;
+  --danger: #c8472d;
+  --warning: #b77a1d;
+  --shadow-xs: 0 1px 2px rgba(28, 49, 40, .025);
+  --shadow-sm: 0 8px 30px rgba(40, 67, 54, .055);
+  --shadow-md: 0 18px 50px rgba(40, 67, 54, .085);
 }
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
-html {
-  background: var(--app-bg);
-}
+html { background: var(--bg); }
 
 body {
   margin: 0;
   min-width: 320px;
-  background:
-    radial-gradient(circle at 15% -10%, rgba(14, 122, 79, 0.07), transparent 28rem),
-    linear-gradient(180deg, #f8faf7 0%, var(--app-bg) 34rem);
-  color: var(--app-text);
+  color: var(--text);
   font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  background:
+    radial-gradient(circle at 8% 2%, rgba(54,179,126,.10), transparent 24rem),
+    radial-gradient(circle at 92% 12%, rgba(153,214,181,.13), transparent 28rem),
+    linear-gradient(180deg, #fbfdfc 0%, #f6f9f7 44%, #f7faf8 100%);
+  background-attachment: fixed;
 }
 
-button,
-input,
-select,
-textarea {
-  font: inherit;
-}
+button, input, select, textarea { font: inherit; }
 
-button,
-a,
-input,
-select,
-textarea {
+button, a, input, select, textarea {
   -webkit-tap-highlight-color: transparent;
 }
 
-::selection {
-  background: rgba(14, 122, 79, 0.16);
-}
+::selection { background: rgba(54,179,126,.18); }
 
-/* Global application polish. This intentionally changes presentation only. */
 .app-surface {
+  position: relative;
+  isolation: isolate;
   background: transparent;
 }
 
-.app-surface > div {
-  animation: app-page-in 180ms ease-out;
+.app-surface::before,
+.app-surface::after {
+  content: "";
+  position: fixed;
+  z-index: -1;
+  pointer-events: none;
+  border-radius: 999px;
+  filter: blur(70px);
+  opacity: .42;
 }
 
+.app-surface::before {
+  width: 320px;
+  height: 320px;
+  top: 120px;
+  left: -100px;
+  background: rgba(120, 220, 167, .20);
+}
+
+.app-surface::after {
+  width: 360px;
+  height: 360px;
+  right: -130px;
+  bottom: 5vh;
+  background: rgba(184, 226, 204, .22);
+}
+
+.app-surface > div {
+  animation: page-enter 320ms cubic-bezier(.2,.7,.2,1);
+}
+
+/* Cards */
 .app-surface .bg-white.rounded-xl,
 .app-surface .bg-white.rounded-2xl {
-  border-color: var(--app-border) !important;
-  box-shadow: var(--app-shadow-sm) !important;
+  background: rgba(255,255,255,.86) !important;
+  border-color: var(--line) !important;
+  box-shadow: var(--shadow-sm) !important;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  transition:
+    transform 220ms cubic-bezier(.2,.7,.2,1),
+    box-shadow 220ms ease,
+    border-color 220ms ease,
+    background-color 220ms ease;
 }
 
 .app-surface .bg-white.rounded-xl:hover,
 .app-surface .bg-white.rounded-2xl:hover {
-  border-color: var(--app-border-strong) !important;
+  border-color: var(--line-strong) !important;
+  box-shadow: var(--shadow-md) !important;
+  transform: translateY(-2px);
 }
 
+/* Tables */
 .app-surface table {
   border-collapse: separate;
   border-spacing: 0;
 }
 
 .app-surface thead {
-  background: #f7f9f7 !important;
+  background: rgba(247,250,248,.82) !important;
 }
 
 .app-surface thead th {
-  color: #68766f !important;
-  font-size: 0.72rem;
-  letter-spacing: 0.035em;
+  color: #7a8881 !important;
+  font-size: .70rem;
+  letter-spacing: .055em;
   text-transform: uppercase;
   font-weight: 700 !important;
 }
 
 .app-surface tbody tr {
-  transition: background-color 140ms ease, transform 140ms ease;
+  transition: background-color 160ms ease, transform 160ms ease;
 }
 
 .app-surface tbody tr:hover {
-  background-color: #f8faf8 !important;
+  background-color: rgba(238,249,243,.72) !important;
 }
 
+/* Form controls */
 .app-surface input,
 .app-surface select,
 .app-surface textarea {
-  border-color: var(--app-border-strong) !important;
-  background-color: rgba(255, 255, 255, 0.96);
-  box-shadow: inset 0 1px 0 rgba(20, 33, 28, 0.02);
+  border-color: var(--line-strong) !important;
+  background-color: rgba(255,255,255,.84) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.9), var(--shadow-xs);
+  transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
 }
 
 .app-surface input:focus,
 .app-surface select:focus,
 .app-surface textarea:focus {
-  border-color: rgba(14, 122, 79, 0.65) !important;
-  box-shadow: 0 0 0 3px rgba(14, 122, 79, 0.10) !important;
+  border-color: rgba(22,132,90,.45) !important;
+  background-color: #fff !important;
+  box-shadow: 0 0 0 4px rgba(54,179,126,.10) !important;
 }
 
+/* Buttons */
 .app-surface button {
   transition:
-    background-color 150ms ease,
-    border-color 150ms ease,
-    color 150ms ease,
-    box-shadow 150ms ease,
-    transform 150ms ease;
+    transform 160ms cubic-bezier(.2,.7,.2,1),
+    box-shadow 160ms ease,
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease;
+}
+
+.app-surface button:hover:not(:disabled) {
+  transform: translateY(-1px);
 }
 
 .app-surface button:active:not(:disabled) {
-  transform: translateY(1px);
+  transform: translateY(0) scale(.985);
 }
 
 .app-surface h1 {
-  letter-spacing: -0.035em;
+  letter-spacing: -.04em;
+  font-weight: 760;
 }
 
 .app-surface h2,
 .app-surface h3 {
-  letter-spacing: -0.02em;
+  letter-spacing: -.025em;
 }
 
 .app-surface .shadow-sm {
-  box-shadow: var(--app-shadow-sm) !important;
+  box-shadow: var(--shadow-sm) !important;
 }
 
 .app-surface .animate-pulse {
-  background-image: linear-gradient(90deg, rgba(20, 33, 28, 0.04), rgba(20, 33, 28, 0.085), rgba(20, 33, 28, 0.04));
+  background-image: linear-gradient(90deg, rgba(30,45,38,.035), rgba(30,45,38,.075), rgba(30,45,38,.035));
   background-size: 240% 100%;
-  animation: app-shimmer 1.35s linear infinite;
+  animation: shimmer 1.5s linear infinite;
 }
 
 .no-scrollbar::-webkit-scrollbar,
-.scrollbar-none::-webkit-scrollbar {
-  display: none;
-}
+.scrollbar-none::-webkit-scrollbar { display: none; }
 
 .no-scrollbar,
-.scrollbar-none {
-  scrollbar-width: none;
-}
+.scrollbar-none { scrollbar-width: none; }
 
-.app-scrollbar::-webkit-scrollbar,
-.custom-scrollbar::-webkit-scrollbar {
+.custom-scrollbar::-webkit-scrollbar,
+.app-scrollbar::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
-.app-scrollbar::-webkit-scrollbar-thumb,
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #cfd7d1;
+.custom-scrollbar::-webkit-scrollbar-thumb,
+.app-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(101,127,114,.28);
   border-radius: 999px;
   border: 2px solid transparent;
   background-clip: padding-box;
 }
 
-.app-scrollbar::-webkit-scrollbar-track,
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
+.custom-scrollbar::-webkit-scrollbar-track,
+.app-scrollbar::-webkit-scrollbar-track { background: transparent; }
+
+@keyframes page-enter {
+  from { opacity: 0; transform: translateY(7px) scale(.998); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-@keyframes app-page-in {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes app-shimmer {
+@keyframes shimmer {
   from { background-position: 120% 0; }
   to { background-position: -120% 0; }
 }
@@ -199,9 +225,10 @@ textarea {
   .app-surface .animate-pulse {
     animation: none !important;
   }
-
   .app-surface button,
-  .app-surface tbody tr {
+  .app-surface tbody tr,
+  .app-surface .bg-white.rounded-xl,
+  .app-surface .bg-white.rounded-2xl {
     transition: none !important;
   }
 }

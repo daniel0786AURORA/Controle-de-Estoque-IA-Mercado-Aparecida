@@ -544,10 +544,10 @@ export const CaixaPage: React.FC = () => {
   const totalDesconto = totalDescontoItens;
 
   return (
-    <div className="w-full max-w-7xl mx-auto h-[calc(100vh-4rem)] flex flex-col md:flex-row overflow-hidden bg-white">
+    <div className="w-full max-w-[1180px] mx-auto h-[calc(100dvh-8.25rem)] min-h-[560px] flex flex-col md:flex-row overflow-hidden bg-white/88 backdrop-blur-xl rounded-[22px] border border-white/70 shadow-[0_16px_50px_rgba(45,76,61,.08)] mt-3 mb-4">
       {/* Coluna Esquerda: Busca e Feedback */}
-      <div className="flex-1 flex flex-col border-r border-[#14211C]/10 p-4 sm:p-6 md:p-8 overflow-hidden relative">
-        <h1 className="text-2xl sm:text-3xl font-bold text-[#14211C] mb-6 shrink-0">Caixa</h1>
+      <div className="flex-1 flex flex-col border-r border-[#14211C]/8 p-3 sm:p-4 md:p-5 overflow-hidden relative">
+        <h1 className="text-xl sm:text-xl font-bold text-[#14211C] mb-4 shrink-0">Caixa</h1>
         
         {/* Campo de Bipagem */}
         <div className="relative shrink-0 z-20">
@@ -572,7 +572,7 @@ export const CaixaPage: React.FC = () => {
                 if (e.relatedTarget && (e.relatedTarget as HTMLElement).closest('.fixed')) return;
                 manterFoco(e);
               }}
-              className={`block w-full pl-12 pr-4 py-4 text-xl md:text-2xl font-semibold border-2 rounded-xl focus:ring-0 focus:border-[#2C4A3E] focus:bg-white outline-none transition-all placeholder:text-[#14211C]/30 ${multiplicador !== null ? 'border-[#2C4A3E] ring-4 ring-[#2C4A3E]/20 bg-[#2C4A3E]/5' : 'bg-[#EEF1EC]/30 border-[#14211C]/20'}`}
+              className={`block w-full pl-12 pr-4 py-3.5 text-lg md:text-xl font-semibold border-2 rounded-xl focus:ring-0 focus:border-[#2C4A3E] focus:bg-white outline-none transition-all placeholder:text-[#14211C]/30 ${multiplicador !== null ? 'border-[#2C4A3E] ring-4 ring-[#2C4A3E]/20 bg-[#2C4A3E]/5' : 'bg-[#EEF1EC]/30 border-[#14211C]/20'}`}
               placeholder="Bipe o código ou digite o nome..."
               autoFocus
             />
@@ -636,7 +636,7 @@ export const CaixaPage: React.FC = () => {
       <div className="w-full md:w-[450px] lg:w-[500px] bg-[#EEF1EC]/30 flex flex-col h-full border-l border-[#14211C]/10 shrink-0">
         
         {/* Cabeçalho do Carrinho */}
-        <div className="p-4 sm:p-6 border-b border-[#14211C]/10 bg-white flex justify-between items-center shrink-0">
+        <div className="p-3 sm:p-4 border-b border-[#14211C]/10 bg-white flex justify-between items-center shrink-0">
           <h2 className="text-xl font-bold text-[#14211C] flex items-center gap-2">
             <ShoppingCart className="w-5 h-5" />
             Carrinho
@@ -647,7 +647,7 @@ export const CaixaPage: React.FC = () => {
         </div>
 
         {/* Lista de Itens */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3">
           {carrinho.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-[#14211C]/40">
               <ShoppingCart className="w-16 h-16 mb-4 opacity-20" />
@@ -671,7 +671,7 @@ export const CaixaPage: React.FC = () => {
                     <div className="flex items-center gap-1">
                       <button 
                         onClick={() => atualizarQuantidade(item.id_carrinho, item.quantidade - (item.unidade === 'kg' ? 0.1 : 1))}
-                        className="w-11 h-11 bg-[#EEF1EC] text-[#14211C] hover:bg-[#14211C]/10 rounded-xl flex items-center justify-center font-bold text-2xl transition-colors shrink-0"
+                        className="w-9 h-9 bg-[#EEF1EC] text-[#14211C] hover:bg-[#14211C]/10 rounded-xl flex items-center justify-center font-bold text-2xl transition-colors shrink-0"
                       >
                         −
                       </button>
@@ -688,7 +688,7 @@ export const CaixaPage: React.FC = () => {
 
                       <button 
                         onClick={() => atualizarQuantidade(item.id_carrinho, item.quantidade + (item.unidade === 'kg' ? 0.1 : 1))}
-                        className="w-11 h-11 bg-[#EEF1EC] text-[#14211C] hover:bg-[#14211C]/10 rounded-xl flex items-center justify-center font-bold text-2xl transition-colors shrink-0"
+                        className="w-9 h-9 bg-[#EEF1EC] text-[#14211C] hover:bg-[#14211C]/10 rounded-xl flex items-center justify-center font-bold text-2xl transition-colors shrink-0"
                       >
                         +
                       </button>
@@ -709,7 +709,7 @@ export const CaixaPage: React.FC = () => {
                   <div className="font-bold text-xl text-[#14211C]">{formatarMoeda(item.subtotal)}</div>
                   <button 
                     onClick={() => removerDoCarrinho(item.id_carrinho)}
-                    className="text-[#C4361A]/50 hover:text-[#C4361A] w-11 h-11 flex items-center justify-center rounded-xl hover:bg-[#C4361A]/10 transition-colors mt-auto"
+                    className="text-[#C4361A]/50 hover:text-[#C4361A] w-9 h-9 flex items-center justify-center rounded-xl hover:bg-[#C4361A]/10 transition-colors mt-auto"
                   >
                     <Trash2 className="w-5 h-5" />
                   </button>
@@ -720,12 +720,12 @@ export const CaixaPage: React.FC = () => {
         </div>
 
         {/* Rodapé: Totais e Pagamento */}
-        <div className="p-4 sm:p-6 bg-white border-t border-[#14211C]/10 shrink-0">
+        <div className="p-3 sm:p-4 bg-white border-t border-[#14211C]/10 shrink-0">
           <div className="flex flex-col items-end mb-4">
             <span className="text-sm font-semibold text-[#14211C]/60 uppercase tracking-wide">Total a Pagar</span>
             {descontoAplicadoValor > 0 && (
                <div className="flex flex-col items-end">
-                 <span className="text-2xl font-bold text-[#14211C]/40 line-through mb-1">{formatarMoeda(totalComDescontoItem)}</span>
+                 <span className="text-xl font-bold text-[#14211C]/40 line-through mb-1">{formatarMoeda(totalComDescontoItem)}</span>
                  <span className="text-green-600 font-bold text-lg mb-1">Desconto venda: -{formatarMoeda(descontoAplicadoValor)}</span>
                </div>
             )}
@@ -751,7 +751,7 @@ export const CaixaPage: React.FC = () => {
 
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-2.5">
             <button 
               onClick={() => fecharVenda('dinheiro')}
               disabled={carrinho.length === 0 || fechandoVenda}
